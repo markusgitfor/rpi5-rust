@@ -54,7 +54,6 @@ class CameraRecorder:
             "-r", str(self.fps),
             "-reset_timestamps", "1",  # FFmpeg option
             "-strftime", "1",  # Allow strftime in filenames
-            # "-vf", "drawtext=text='Your Static Text Here':x=10:y=H-h-10:fontsize=24:fontcolor=white:borderw=2:bordercolor=black",
             output_pattern,  # Output filename with strftime
         ]
 

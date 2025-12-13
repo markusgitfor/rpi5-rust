@@ -1,0 +1,20 @@
+# =============================
+# Dashcam Configuration
+# =============================
+
+storage:
+  clip_dir: "/media/markus/T7/rpi-videos"
+  max_storage_bytes: 107374182400   # 100 GB
+
+recording:
+  segment_seconds: 60               # Length of each clip (seconds)
+
+camera:
+  width: 2560
+  height: 1440
+  fps: 30
+  bitrate: 20000000                 # bits per second (20 Mbps)
+
+ring_buffer:
+  check_interval_seconds: 60         # How often to enforce storage limits
+

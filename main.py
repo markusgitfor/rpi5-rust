@@ -1,18 +1,26 @@
 import threading
 import time
+import yaml
 from camera.recorder import CameraRecorder
 from storage.ringbuffer import RingBufferManager
 
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
-CLIP_DIR = "/home/markus/Documents/rpi5-cam/videos/clips"  # Directory for video clips
-MAX_STORAGE_BYTES = 1 * 1024**3  # 1 GB max storage
-SEGMENT_SECONDS = 60  # Each clip = 1 minute
-CAM_WIDTH = 2560
-CAM_HEIGHT = 1440
-CAM_FPS = 30
-CAM_BITRATE = 20_000_000  # 50 MB/s
+with open("config/config.yaml", "r") as f:
+    config = yaml.safe_load(f)
+
+CLIP_DIR = config["storage"]["clip_dir"]
+MAX_STORAGE_BYTES = config["storage"]["max_storage_bytes"]
+SEGMENT_SECONDS = config["recording"]["segment_seconds"]
+
+CAM_WIDTH = config["camera"]["width"]
+CAM_HEIGHT = config["camera"]["height"]
+CAM_FPS = config["camera"]["fps"]
+CAM_BITRATE = config["camera"]["bitrate"]
+
+RING_CHECK_INTERVAL = config["ring_buffer"]["check_interval_seconds"]
+
 
 # -----------------------------
 # RING BUFFER THREAD
@@ -22,7 +30,8 @@ CAM_BITRATE = 20_000_000  # 50 MB/s
 def ring_buffer_loop(ring_buffer: RingBufferManager):
     while True:
         ring_buffer.enforce_limit()
-        time.sleep(60)  # check every minute
+        time.sleep(RING_CHECK_INTERVAL)  # check every minute
+
 
 # -----------------------------
 # MAIN
@@ -30,11 +39,11 @@ def ring_buffer_loop(ring_buffer: RingBufferManager):
 
 
 def main():
-    # 1️⃣ Start ring buffer manager
+    # Start ring buffer manager
     ring_buffer = RingBufferManager(CLIP_DIR, MAX_STORAGE_BYTES)
     threading.Thread(target=ring_buffer_loop, args=(ring_buffer,), daemon=True).start()
 
-    # 2️⃣ Start camera recorder (outputs to stdout)
+    # Start camera recorder (outputs to stdout)
     recorder = CameraRecorder(
         output_dir=CLIP_DIR,  # temporary directory for rpicam output
         width=CAM_WIDTH,
@@ -45,7 +54,7 @@ def main():
     )
     recorder.start()
 
-    # 4️⃣ Monitor and auto-restart if needed
+    # Monitor and auto-restart if needed
     try:
         while True:
             if not recorder.process.poll() is None:
