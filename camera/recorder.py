@@ -7,38 +7,55 @@ class CameraRecorder:
     def __init__(
         self,
         output_dir: str,
-        width: int,
-        height: int,
-        fps: int,
-        bitrate: int,
+        width: int = 2304,
+        height: int = 1296,
+        fps: int = 30,
+        bitrate: int = 20000000,  # bits per second
+        buffer_count: int = 50,
         segment_seconds: int = 60,
+        codec: str = "libav",         # "libav" for rpicam-vid FFmpeg, "h264" for hardware
+        hdr: str = "off",             # "on" or "off"
+        gop: Optional[int] = None,    # keyframe interval
+        preview: bool = False,        # show preview window
+        extra_args: Optional[list] = None  # any extra rpicam-vid args
     ):
         self.output_dir = output_dir
         self.width = width
         self.height = height
         self.fps = fps
         self.bitrate = bitrate
+        self.buffer_count = buffer_count
         self.segment_seconds = segment_seconds
+        self.codec = codec
+        self.hdr = hdr
+        self.gop = gop
+        self.preview = preview
+        self.extra_args = extra_args or []
 
         self.process: Optional[subprocess.Popen] = None
         os.makedirs(output_dir, exist_ok=True)
 
     def start(self):
         """Start the recording and pipe to FFmpeg for segmentation."""
-        # Create the command for rpicam-vid
+        # Build rpicam-vid command
         rpicam_vid_cmd = [
             "rpicam-vid", "-t", "0",  # Continuous capture
             "--width", str(self.width),
             "--height", str(self.height),
             "--framerate", str(self.fps),
-            "--buffer-count", "10",
-            "--nopreview", str(1),  # If set to 1, no preview window is shown!
-            "--hdr", "off",
-            "--codec", "libav",
+            "--buffer-count", str(self.buffer_count),
+            "--nopreview", "0" if self.preview else "1",
+            "--hdr", self.hdr,
+            "--codec", self.codec,
             "--libav-format", "mpegts",
             "--bitrate", str(self.bitrate),
-            "-o", "-",  # Output to stdout (pipe to FFmpeg)
         ]
+
+        if self.gop is not None:
+            rpicam_vid_cmd += ["--gop", str(self.gop)]
+
+        rpicam_vid_cmd += self.extra_args
+        rpicam_vid_cmd += ["-o", "-"]  # Output to stdout for piping
 
         # Create the command for ffmpeg
         output_pattern = os.path.join(self.output_dir, "%Y%m%d_%H%M%S.mp4")

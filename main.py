@@ -18,6 +18,12 @@ CAM_WIDTH = config["camera"]["width"]
 CAM_HEIGHT = config["camera"]["height"]
 CAM_FPS = config["camera"]["fps"]
 CAM_BITRATE = config["camera"]["bitrate"]
+CAM_BUFFER_COUNT = config["camera"]["buffer_count"]
+CAM_CODEC = config["camera"]["codec"]
+CAM_HDR = config["camera"]["hdr"]
+CAM_GOP = config["camera"]["gop"]
+CAM_PREVIEW = config["camera"]["preview"]
+CAM_EXTRA_ARGS = config["camera"]["extra_args"]
 
 RING_CHECK_INTERVAL = config["ring_buffer"]["check_interval_seconds"]
 
@@ -45,12 +51,18 @@ def main():
 
     # Start camera recorder (outputs to stdout)
     recorder = CameraRecorder(
-        output_dir=CLIP_DIR,  # temporary directory for rpicam output
+        output_dir=CLIP_DIR,
         width=CAM_WIDTH,
         height=CAM_HEIGHT,
         fps=CAM_FPS,
         bitrate=CAM_BITRATE,
         segment_seconds=SEGMENT_SECONDS,
+        buffer_count=CAM_BUFFER_COUNT,
+        codec=CAM_CODEC,
+        hdr=CAM_HDR,
+        gop=CAM_GOP,
+        preview=CAM_PREVIEW,
+        extra_args=CAM_EXTRA_ARGS
     )
     recorder.start()
 
