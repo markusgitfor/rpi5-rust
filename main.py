@@ -21,7 +21,6 @@ CAM_BITRATE = config["camera"]["bitrate"]
 CAM_BUFFER_COUNT = config["camera"]["buffer_count"]
 CAM_CODEC = config["camera"]["codec"]
 CAM_HDR = config["camera"]["hdr"]
-CAM_GOP = config["camera"]["gop"]
 CAM_PREVIEW = config["camera"]["preview"]
 CAM_EXTRA_ARGS = config["camera"]["extra_args"]
 
@@ -60,7 +59,6 @@ def main():
         buffer_count=CAM_BUFFER_COUNT,
         codec=CAM_CODEC,
         hdr=CAM_HDR,
-        gop=CAM_GOP,
         preview=CAM_PREVIEW,
         extra_args=CAM_EXTRA_ARGS
     )
