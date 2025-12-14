@@ -31,7 +31,7 @@ class CameraRecorder:
             "--width", str(self.width),
             "--height", str(self.height),
             "--framerate", str(self.fps),
-            "--buffer-count", "10",
+            "--buffer-count", "50",
             "--nopreview", str(0),  # If set to 1, no preview window is shown!
             "--hdr", "off",
             "--codec", "libav",
