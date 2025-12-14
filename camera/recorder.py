@@ -15,7 +15,6 @@ class CameraRecorder:
         segment_seconds: int = 60,
         codec: str = "libav",         # "libav" for rpicam-vid FFmpeg, "h264" for hardware
         hdr: str = "off",             # "on" or "off"
-        gop: Optional[int] = None,    # keyframe interval
         preview: bool = False,        # show preview window
         extra_args: Optional[list] = None  # any extra rpicam-vid args
     ):
@@ -28,7 +27,6 @@ class CameraRecorder:
         self.segment_seconds = segment_seconds
         self.codec = codec
         self.hdr = hdr
-        self.gop = gop
         self.preview = preview
         self.extra_args = extra_args or []
 
@@ -50,9 +48,6 @@ class CameraRecorder:
             "--libav-format", "mpegts",
             "--bitrate", str(self.bitrate),
         ]
-
-        if self.gop is not None:
-            rpicam_vid_cmd += ["--gop", str(self.gop)]
 
         rpicam_vid_cmd += self.extra_args
         rpicam_vid_cmd += ["-o", "-"]  # Output to stdout for piping

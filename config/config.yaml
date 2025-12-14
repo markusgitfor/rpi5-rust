@@ -17,7 +17,6 @@ camera:
   buffer_count: 15
   codec: "libav"                    # "libav" for software encoding, "h264" for hardware
   hdr: "off"                         # "on" or "off"
-  gop: 60                            # Keyframe interval
   preview: false                      # Show preview window
   extra_args: []                      # Any additional rpicam-vid arguments
 
