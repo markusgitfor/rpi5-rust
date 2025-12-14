@@ -1,4 +1,59 @@
 # rpi5-cam
 
+This a software that can be used for controlling and recording camera data
+using Raspberry Pi 5 and camera module v3 (wide angle lens). 
 
+Installation is simple using following commands:
 
+```
+make systemdeps
+make install
+```
+
+Recording can be started with only using command: 
+
+```
+make run
+```
+
+Settings and path configured for saving the videos is found from the `config/config.yaml` file
+
+Getting the recording to be started when turning on the device is done the following way:
+
+`/etc/systemd/system/dashcam.service` has the following content:
+```
+[Unit]
+Description=Dashcam Python Script
+After=network.target
+
+[Service]
+ExecStart=/home/markus/Documents/rpi5/venv/bin/python3 /home/markus/Documents/rpi5/main.py
+WorkingDirectory=/home/markus/Documents/rpi5
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=markus
+Group=markus
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Service can be monitored using the command:
+```
+sudo systemctl status dashcam.service
+```
+Stopped with this command: 
+```
+sudo systemctl stop dashcam.service
+```
+Started or restarted with this command: 
+```
+sudo systemctl start dashcam.service
+sudo systemctl restart dashcam.service
+```
+Raspberry Pi can be accessed through Wi-Fi
+```
+ssh markus@192.168.0.033
+```
+Replace `192.168.0.33` with your Raspberry Pi’s actual IP address. Enter your password when prompted.
