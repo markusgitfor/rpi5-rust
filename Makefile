@@ -76,3 +76,10 @@ clean:
 .PHONY: docker-build
 docker-build:
 	docker build -t rpi-camera:latest .
+
+# ----------------------------
+# Update branch
+# ----------------------------
+.PHONY: update
+update:
+	git pull origin main
