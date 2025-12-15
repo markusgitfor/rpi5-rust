@@ -43,6 +43,11 @@ class CameraRecorder:
             "--framerate", str(self.fps),
             "--buffer-count", str(self.buffer_count),
             "--nopreview", "0" if self.preview else "1",
+            "--autofocus-mode", "manual",
+            "--lens-position", "0.0",
+            "--denoise", "cdn_off",
+            "--exposure", "normal", # or sports
+            "--awb", "auto",
             "--hdr", self.hdr,
             "--codec", self.codec,
             "--libav-format", "mpegts",
