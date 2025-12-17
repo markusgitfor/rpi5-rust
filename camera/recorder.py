@@ -42,6 +42,9 @@ class CameraRecorder:
             f"g={int(self.fps * 2)}"
         ]
 
+        # Join them with semicolons
+        codec_opts_string = ";".join(codec_opts)
+
         # Build rpicam-vid command
         rpicam_vid_cmd = [
             "rpicam-vid", "-t", "0",  # Continuous capture
@@ -58,11 +61,9 @@ class CameraRecorder:
             "--hdr", self.hdr,
             "--codec", self.codec,
             "--libav-format", "mpegts",
+            # Pass ONCE, separated by semicolons
+            "--libav-video-codec-opts", codec_opts_string
         ]
-
-        # Loop through options and add the flag for EACH one
-        for opt in codec_opts:
-            rpicam_vid_cmd.extend(["--libav-video-codec-opts", opt])
 
         rpicam_vid_cmd += self.extra_args
         rpicam_vid_cmd += ["-o", "-"]  # Output to stdout for piping
