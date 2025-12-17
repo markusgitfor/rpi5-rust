@@ -10,10 +10,9 @@ class CameraRecorder:
         width: int = 2304,
         height: int = 1296,
         fps: int = 30,
-        bitrate: int = 20000000,  # bits per second
         buffer_count: int = 50,
         segment_seconds: int = 60,
-        codec: str = "libav",         # "libav" for rpicam-vid FFmpeg, "h264" for hardware
+        codec: str = "libav",         # "libav" for rpicam-vid FFmpeg
         hdr: str = "off",             # "on" or "off"
         preview: bool = False,        # show preview window
         extra_args: Optional[list] = None  # any extra rpicam-vid args
@@ -22,7 +21,6 @@ class CameraRecorder:
         self.width = width
         self.height = height
         self.fps = fps
-        self.bitrate = bitrate
         self.buffer_count = buffer_count
         self.segment_seconds = segment_seconds
         self.codec = codec
@@ -46,12 +44,12 @@ class CameraRecorder:
             "--autofocus-mode", "manual",
             "--lens-position", "0.0",
             "--denoise", "cdn_off",
-            "--exposure", "normal", # or sports
+            "--exposure", "sports", # or sports
             "--awb", "auto",
             "--hdr", self.hdr,
             "--codec", self.codec,
             "--libav-format", "mpegts",
-            "--bitrate", str(self.bitrate),
+            "--libav-video-codec-opts", f"crf=18,preset=veryfast,maxrate=25M,bufsize=50M,g={self.fps * 2}"  # superfast for lower cpu use
         ]
 
         rpicam_vid_cmd += self.extra_args
@@ -61,17 +59,15 @@ class CameraRecorder:
         output_pattern = os.path.join(self.output_dir, "%Y%m%d_%H%M%S.mp4")
         ffmpeg_cmd = [
             "ffmpeg", "-y", "-loglevel", "error",  # FFmpeg options
-            "-f", "mpegts",  # Input format (h264 for streaming from rpicam-vid)
-            "-i", "-",  # Read from stdin
-            "-c:v", "copy",  # Codec copy (for direct passthrough)
+            "-f", "mpegts",
+            "-i", "-",
+            "-c:v", "copy",  # Fast, low-CPU passthrough
             "-f", "segment",
             "-segment_time", str(self.segment_seconds),
-            "-g", str(self.fps * 2),  # Keyframes after every n, for compression
-            "-crf", "20",  # Constant Rate Factor (0 = best, 51 = worst quality)
-            "-r", str(self.fps),
-            "-reset_timestamps", "1",  # FFmpeg option
-            "-strftime", "1",  # Allow strftime in filenames
-            output_pattern,  # Output filename with strftime
+            "-reset_timestamps", "1",
+            "-strftime", "1",
+            "-segment_format", "mp4",  # Explicitly set segment format
+            output_pattern,
         ]
 
         # Start rpicam-vid process
