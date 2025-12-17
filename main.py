@@ -17,7 +17,6 @@ SEGMENT_SECONDS = config["recording"]["segment_seconds"]
 CAM_WIDTH = config["camera"]["width"]
 CAM_HEIGHT = config["camera"]["height"]
 CAM_FPS = config["camera"]["fps"]
-CAM_BITRATE = config["camera"]["bitrate"]
 CAM_BUFFER_COUNT = config["camera"]["buffer_count"]
 CAM_CODEC = config["camera"]["codec"]
 CAM_HDR = config["camera"]["hdr"]
@@ -54,7 +53,6 @@ def main():
         width=CAM_WIDTH,
         height=CAM_HEIGHT,
         fps=CAM_FPS,
-        bitrate=CAM_BITRATE,
         segment_seconds=SEGMENT_SECONDS,
         buffer_count=CAM_BUFFER_COUNT,
         codec=CAM_CODEC,
