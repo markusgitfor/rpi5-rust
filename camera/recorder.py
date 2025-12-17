@@ -33,6 +33,15 @@ class CameraRecorder:
 
     def start(self):
         """Start the recording and pipe to FFmpeg for segmentation."""
+        # Define your codec options clearly in a list or dict first
+        codec_opts = [
+            "crf=18",
+            "preset=veryfast",
+            "maxrate=25M",
+            "bufsize=50M",
+            f"g={int(self.fps * 2)}"
+        ]
+
         # Build rpicam-vid command
         rpicam_vid_cmd = [
             "rpicam-vid", "-t", "0",  # Continuous capture
@@ -49,8 +58,11 @@ class CameraRecorder:
             "--hdr", self.hdr,
             "--codec", self.codec,
             "--libav-format", "mpegts",
-            "--libav-video-codec-opts", f"crf=18,preset=veryfast,maxrate=25M,bufsize=50M,g={self.fps * 2}"  # superfast for lower cpu use
         ]
+
+        # Loop through options and add the flag for EACH one
+        for opt in codec_opts:
+            rpicam_vid_cmd.extend(["--libav-video-codec-opts", opt])
 
         rpicam_vid_cmd += self.extra_args
         rpicam_vid_cmd += ["-o", "-"]  # Output to stdout for piping
