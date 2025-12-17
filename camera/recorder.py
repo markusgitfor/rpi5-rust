@@ -44,7 +44,7 @@ class CameraRecorder:
             "--autofocus-mode", "manual",
             "--lens-position", "0.0",
             "--denoise", "cdn_off",
-            "--exposure", "sports", # or sports
+            "--exposure", "normal", # or short, long
             "--awb", "auto",
             "--hdr", self.hdr,
             "--codec", self.codec,
