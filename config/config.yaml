@@ -11,10 +11,10 @@ recording:
   segment_seconds: 60               # Length of each clip (seconds)
 
 camera:
-  width: 2304
-  height: 1296
+  width: 1920
+  height: 1080
   fps: 30
-  buffer_count: 60
+  buffer_count: 30
   codec: "libav"                    # "libav" for software encoding, "h264" for hardware
   hdr: "off"                         # "on" or "off"
   preview: false                      # Show preview window
