@@ -4,7 +4,7 @@
 
 storage:
   clip_dir: "videos/clips"
-  max_storage_bytes: 2147483648  # 2 GB
+  max_storage_bytes: 12884901888  # 12 GB
 
 
 recording:
