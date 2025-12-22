@@ -1,9 +1,10 @@
 import threading
 import time
 import yaml
+import os
 from camera.recorder import CameraRecorder
 from storage.ringbuffer import RingBufferManager
-from test_focus import test_focus
+from secrets import token_hex
 
 # -----------------------------
 # CONFIGURATION
@@ -11,7 +12,7 @@ from test_focus import test_focus
 with open("config/config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
-CLIP_DIR = config["storage"]["clip_dir"]
+CLIP_DIR = os.path.join(config["storage"]["clip_dir"], token_hex(nbytes=2))
 MAX_STORAGE_BYTES = config["storage"]["max_storage_bytes"]
 SEGMENT_SECONDS = config["recording"]["segment_seconds"]
 
@@ -76,5 +77,4 @@ def main():
 
 
 if __name__ == "__main__":
-    test_focus()
     main()
