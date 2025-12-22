@@ -3,6 +3,7 @@ import time
 import yaml
 from camera.recorder import CameraRecorder
 from storage.ringbuffer import RingBufferManager
+from test_focus import test_focus
 
 # -----------------------------
 # CONFIGURATION
@@ -75,4 +76,5 @@ def main():
 
 
 if __name__ == "__main__":
+    test_focus()
     main()
