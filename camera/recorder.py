@@ -54,7 +54,7 @@ class CameraRecorder:
             "--buffer-count", str(self.buffer_count),
             "--nopreview", "0" if self.preview else "1",
             "--autofocus-mode", "manual",
-            "--lens-position", "0.0",
+            "--lens-position", "0.2",
             "--denoise", "cdn_off",
             "--exposure", "normal", # or short, long
             "--awb", "auto",
