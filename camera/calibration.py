@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import os
 
 
 def calibrate_from_video(video_path, checkerboard_size, square_size_mm=100, error_threshold=0.5):
@@ -18,8 +17,8 @@ def calibrate_from_video(video_path, checkerboard_size, square_size_mm=100, erro
     objp[:, :2] = np.mgrid[0:checkerboard_size[0], 0:checkerboard_size[1]].T.reshape(-1, 2)
     objp = objp * square_size_mm
 
-    objpoints = []
-    imgpoints = []
+    obj_points = []
+    img_points = []
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -43,13 +42,13 @@ def calibrate_from_video(video_path, checkerboard_size, square_size_mm=100, erro
             # 3. Find the chess board corners
             ret_corners, corners = cv2.findChessboardCorners(gray, checkerboard_size, None)
 
-            if ret_corners == True:
+            if ret_corners:
                 # Refine corner locations
                 corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
 
                 # Add to lists
-                objpoints.append(objp)
-                imgpoints.append(corners2)
+                obj_points.append(objp)
+                img_points.append(corners2)
 
                 # Visualize
                 cv2.drawChessboardCorners(frame, checkerboard_size, corners2, ret_corners)
@@ -69,8 +68,8 @@ def calibrate_from_video(video_path, checkerboard_size, square_size_mm=100, erro
         return None, None
 
     # --- STEP 4: INITIAL CALIBRATION ---
-    print(f"\nPerforming initial calibration on {len(objpoints)} frames...")
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+    print(f"\nPerforming initial calibration on {len(obj_points)} frames...")
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
     print(f"Initial RMS Error: {ret:.4f} pixels")
 
     # --- STEP 5: FILTERING (REFINEMENT) ---
@@ -80,26 +79,26 @@ def calibrate_from_video(video_path, checkerboard_size, square_size_mm=100, erro
 
     total_initial_error = 0
 
-    for i in range(len(objpoints)):
+    for i in range(len(obj_points)):
         # Project the 3D points back to 2D using the initial calibration
-        imgpoints2, _ = cv2.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
+        imgpoints2, _ = cv2.projectPoints(obj_points[i], rvecs[i], tvecs[i], mtx, dist)
 
         # Calculate error for this specific frame
-        error = cv2.norm(imgpoints[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)
+        error = cv2.norm(img_points[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)
 
         # Accumulate the error (Fixed line)
         total_initial_error += error
 
         if error < error_threshold:
-            objpoints_clean.append(objpoints[i])
-            imgpoints_clean.append(imgpoints[i])
+            objpoints_clean.append(obj_points[i])
+            imgpoints_clean.append(img_points[i])
         else:
             print(f" -> Removed frame {i}: Error {error:.4f} is too high")
 
         # Calculate average arithmetic error
-    mean_error = total_initial_error / len(objpoints)
+    mean_error = total_initial_error / len(obj_points)
     print(f"\nAverage Arithmetic Error (all frames): {mean_error:.4f}")
-    print(f"Kept {len(objpoints_clean)} out of {len(objpoints)} frames.")
+    print(f"Kept {len(objpoints_clean)} out of {len(obj_points)} frames.")
 
     if len(objpoints_clean) == 0:
         print("Error: All frames were removed! Try increasing the error_threshold.")

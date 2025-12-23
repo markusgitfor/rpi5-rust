@@ -6,6 +6,9 @@ storage:
   clip_dir: "videos"
   max_storage_bytes: 12884901888  # 12 GB
 
+obd:
+  port: "/dev/rfcomm0"
+  enabled: false
 
 recording:
   segment_seconds: 60               # Length of each clip (seconds)
