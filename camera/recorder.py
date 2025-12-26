@@ -37,7 +37,7 @@ class CameraRecorder:
         codec_opts = [
             "crf=18",
             "preset=veryfast",
-            "maxrate=25M",
+            "maxrate=35M",
             "bufsize=50M",
             f"g={int(self.fps * 2)}"
         ]
