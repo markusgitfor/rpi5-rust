@@ -17,7 +17,7 @@ with open("config/config.yaml", "r") as f:
 CLIP_DIR = os.path.join(config["storage"]["clip_dir"], token_hex(nbytes=2))
 os.makedirs(CLIP_DIR, exist_ok=True)  # Ensure directory exists immediately
 
-MAX_STORAGE_GIGABYTES = config["storage"]["max_storage_bytes"]
+MAX_STORAGE_GIGABYTES = config["storage"]["max_storage_gigabytes"]
 SEGMENT_SECONDS = config["recording"]["segment_seconds"]
 
 CAM_WIDTH = config["camera"]["width"]
