@@ -35,8 +35,9 @@ class CameraRecorder:
         """Start the recording and pipe to FFmpeg for segmentation."""
         # Define your codec options clearly in a list or dict first
         codec_opts = [
-            "crf=18",
-            "preset=veryfast",
+            "crf=20",
+            "preset=ultrafast",
+            "profile=baseline",
             "maxrate=35M",
             "bufsize=50M",
             f"g={int(self.fps * 2)}"
