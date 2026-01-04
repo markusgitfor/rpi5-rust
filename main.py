@@ -14,7 +14,7 @@ with open("config/config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 # Create a unique session directory for this run
-CLIP_DIR = os.path.join(config["storage"]["clip_dir"], token_hex(nbytes=2))
+CLIP_DIR = os.path.join(config["storage"]["clip_dir"], "%Y%m%d_%H%M%S")
 os.makedirs(CLIP_DIR, exist_ok=True)  # Ensure directory exists immediately
 
 MAX_STORAGE_GIGABYTES = config["storage"]["max_storage_gigabytes"]
