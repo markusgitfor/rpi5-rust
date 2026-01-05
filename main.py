@@ -5,6 +5,7 @@ import os
 from camera.recorder import CameraRecorder
 from storage.ringbuffer import RingBufferManager
 from obd_pi.read_obd import CarLogger
+from utils.video_merger import VideoMerger
 from datetime import datetime
 
 # -----------------------------
@@ -50,6 +51,11 @@ def ring_buffer_loop(ring_buffer: RingBufferManager):
 # -----------------------------
 def main():
     print(f"--- Starting Dashcam Session: {CLIP_DIR} ---")
+
+    # Merging videos in a thread
+    merger = VideoMerger(root_dir=config["storage"]["clip_dir"], interval=120)
+    merger.set_active_folder(CLIP_DIR)
+    merger.run()
 
     # 1. Initialize Managers
     ring_buffer = RingBufferManager(CLIP_DIR, MAX_STORAGE_GIGABYTES)
