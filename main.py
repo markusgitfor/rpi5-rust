@@ -19,7 +19,7 @@ TOTAL_LOOPS = 6  # How many times to scan (6 * 10s = 60 seconds total)
 
 
 def log_to_file(message):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(OUTPUT_FILE, "a") as f:
         f.write(f"[{timestamp}] {message}\n")
     print(message)
