@@ -95,6 +95,7 @@ def main():
 
             if rpicam_dead or ffmpeg_dead:
                 print("[MAIN] Recorder pipeline crashed/stopped. Restarting...")
+                print(f"RPICAM-status: {rpicam_dead}, FFMPEG-status: {ffmpeg_dead}")
 
                 # 1. Clean up any remaining zombie processes (e.g., if only ffmpeg died)
                 recorder.stop()
