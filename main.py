@@ -13,7 +13,7 @@ from bleak import BleakScanner
 
 # --- CONFIGURATION ---
 OUTPUT_FILE = "candidates.txt"
-MIN_SIGNAL_STRENGTH = -90  # dBm (Lower = allow weaker signals. -75 is good for "inside the car")
+MIN_SIGNAL_STRENGTH = -80  # dBm (Lower = allow weaker signals. -75 is good for "inside the car")
 SCAN_DURATION = 10.0  # Seconds per scan loop
 TOTAL_LOOPS = 6  # How many times to scan (6 * 10s = 60 seconds total)
 
