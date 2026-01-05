@@ -55,7 +55,7 @@ def main():
     # Merging videos in a thread
     merger = VideoMerger(root_dir=config["storage"]["clip_dir"], interval=120)
     merger.set_active_folder(CLIP_DIR)
-    merger.run()
+    merger.start()
 
     # 1. Initialize Managers
     ring_buffer = RingBufferManager(CLIP_DIR, MAX_STORAGE_GIGABYTES)
