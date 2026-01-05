@@ -4,8 +4,8 @@ import yaml
 import os
 from camera.recorder import CameraRecorder
 from storage.ringbuffer import RingBufferManager
-from secrets import token_hex
 from obd_pi.read_obd import CarLogger
+from datetime import datetime
 
 # -----------------------------
 # CONFIGURATION
