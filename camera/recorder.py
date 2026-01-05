@@ -38,15 +38,13 @@ class CameraRecorder:
         """Start the recording and pipe to FFmpeg for segmentation."""
 
         # 1. Configure Video Encoding Options (libav)
-        # Note: High bitrates (35M) require a very fast SD card (V30/A2 class recommended).
-        # If dropping frames persists, lower maxrate to 15M or 20M.
         codec_opts = [
-            "crf=18",
-            "preset=veryfast",
-            "profile=baseline",
-            "maxrate=35M",
-            "bufsize=50M",
-            f"g={int(self.fps)}"  # Keyframe interval matching FPS is good for segmentation
+            "crf=20",  # Slightly higher than 18, visually identical, much easier on CPU
+            "preset=ultrafast",  # CRITICAL: 'veryfast' to 'ultrafast' saves huge CPU usage
+            "profile=high",  # 'ultrafast' allows us to use 'high' profile for better colors/detail
+            "maxrate=30M",  # Bumped up because 'ultrafast' needs more bits for quality
+            "bufsize=60M",  # CRITICAL MISSING SETTING: Buffer size (usually 2x maxrate)
+            f"g={int(self.fps)}"  # Keep this (1 keyframe/sec) for dashcam safety
         ]
         codec_opts_string = ";".join(codec_opts)
 

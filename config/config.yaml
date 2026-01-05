@@ -7,8 +7,8 @@ storage:
   max_storage_gigabytes: 12  # 12 GB
 
 obd:
-  port: "/dev/rfcomm0"
-  enabled: false
+  port: "/tmp/ttyCarly"
+  enabled: true
 
 recording:
   segment_seconds: 60               # Length of each clip (seconds)

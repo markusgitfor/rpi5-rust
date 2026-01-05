@@ -22,10 +22,7 @@ class CarLogger:
         # Dictionary mapping a name (str) to an OBD command object
         self.commands_to_watch: dict[str, Any] = {
             'Coolant': obd.commands.COOLANT_TEMP,
-            'RPM': obd.commands.RPM,
             'Speed': obd.commands.SPEED,
-            'Oil_Temp': obd.commands.OIL_TEMP,
-            'Load': obd.commands.ENGINE_LOAD
         }
 
     def connect(self) -> bool:
@@ -36,7 +33,10 @@ class CarLogger:
 
         print(f"[OBD] Connecting to adapter on {self.port}...")
         try:
-            # timeout=30 prevents it from hanging forever if bluetooth is flaky
+            # There is a service used for bluetooth:
+            # sudo nano /etc/systemd/system/carly-bridge.service
+            # sudo systemctl status carly-bridge.service
+            # Port for the Carly is: CC:03:7B:AE:B0:0E
             self.connection = obd.OBD(self.port, fast=False, timeout=30)
 
             if self.connection.is_connected():
