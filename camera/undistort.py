@@ -91,9 +91,9 @@ def undistort_video_file(input_path, output_path, calibration_file, crop=True):
 
 
 # --- CONFIGURATION ---
-INPUT_VIDEO = '/home/markus/Videos/rasp/output.mp4'
-OUTPUT_VIDEO = '/home/markus/Videos/rasp/output_undistorted.mp4'
-CALIB_FILE = 'camera_calibration_data.npz'
+INPUT_VIDEO = '/home/markus/Videos/rasp-all/videos/bc4c/merged_output.mp4'
+OUTPUT_VIDEO = '/home/markus/Videos/rasp-all/videos/bc4c/merged_output_undistorted.mp4'
+CALIB_FILE = 'calibration_data.npz'
 
 # Set crop=True to cut off black borders, False to keep them
 undistort_video_file(INPUT_VIDEO, OUTPUT_VIDEO, CALIB_FILE, crop=True)
