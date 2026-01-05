@@ -5,7 +5,7 @@ import os
 from camera.recorder import CameraRecorder
 from storage.ringbuffer import RingBufferManager
 from obd_pi.read_obd import CarLogger
-from utils.video_merger import VideoMerger
+# from utils.video_merger import VideoMerger
 from datetime import datetime
 
 # -----------------------------
@@ -121,8 +121,4 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(run_scan())
-    except KeyboardInterrupt:
-        print("\nScan stopped by user.")
     main()
