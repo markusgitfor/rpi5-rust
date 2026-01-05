@@ -80,29 +80,35 @@ def main():
     if car_logger.connect():
         car_logger.start_logging()
 
-    # 4. Start Camera (Main Process)
-    recorder.start()
-
     # 5. Monitor Loop
     try:
+        # Start immediately before the loop
+        recorder.start()
+
         while True:
-            # Check if camera process is still alive
-            if recorder.process.poll() is not None:
-                print("[MAIN] Recorder crashed. Restarting...")
-                recorder.start()
-
-            # (Optional) Check if OBD disconnected and retry?
-            # Usually better to leave it off to prevent bluetooth spamming
-            # while driving, but you could add retry logic here.
-
             time.sleep(2)
+
+            # Check: Is the process object created? AND has it exited?
+            # poll() returns None if running, or an exit code (e.g. 1, -9) if stopped.
+            rpicam_dead = (recorder.rpicam_process is not None) and (recorder.rpicam_process.poll() is not None)
+            ffmpeg_dead = (recorder.ffmpeg_process is not None) and (recorder.ffmpeg_process.poll() is not None)
+
+            if rpicam_dead or ffmpeg_dead:
+                print("[MAIN] Recorder pipeline crashed/stopped. Restarting...")
+
+                # 1. Clean up any remaining zombie processes (e.g., if only ffmpeg died)
+                recorder.stop()
+
+                # 2. Restart fresh
+                recorder.start()
+                print("[MAIN] Restart successful.")
 
     except KeyboardInterrupt:
         print("\n[MAIN] Stopping dashcam...")
     finally:
         # 6. Clean Shutdown
         recorder.stop()
-        car_logger.stop_logging()
+        # car_logger.stop_logging() # Uncomment if you have this object
         print("[MAIN] Shutdown complete.")
 
 
