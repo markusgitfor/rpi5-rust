@@ -4,8 +4,8 @@ import yaml
 import os
 from camera.recorder import CameraRecorder
 from storage.ringbuffer import RingBufferManager
-from secrets import token_hex
 from obd_pi.read_obd import CarLogger
+from datetime import datetime
 
 # -----------------------------
 # CONFIGURATION
@@ -14,7 +14,7 @@ with open("config/config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 # Create a unique session directory for this run
-CLIP_DIR = os.path.join(config["storage"]["clip_dir"], token_hex(nbytes=2))
+CLIP_DIR = os.path.join(config["storage"]["clip_dir"], datetime.now().strftime("%Y%m%d_%H%M%S"))
 os.makedirs(CLIP_DIR, exist_ok=True)  # Ensure directory exists immediately
 
 MAX_STORAGE_GIGABYTES = config["storage"]["max_storage_gigabytes"]
