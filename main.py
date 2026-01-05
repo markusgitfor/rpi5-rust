@@ -13,48 +13,57 @@ from bleak import BleakScanner
 
 # --- CONFIGURATION ---
 OUTPUT_FILE = "candidates.txt"
-MIN_SIGNAL_STRENGTH = -80  # dBm (Lower = allow weaker signals. -75 is good for "inside the car")
+MIN_SIGNAL_STRENGTH = -90  # dBm (Lower = allow weaker signals. -75 is good for "inside the car")
 SCAN_DURATION = 10.0  # Seconds per scan loop
 TOTAL_LOOPS = 6  # How many times to scan (6 * 10s = 60 seconds total)
 
 
 def log_to_file(message):
-    """Writes a line to the file with a timestamp."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(OUTPUT_FILE, "a") as f:
         f.write(f"[{timestamp}] {message}\n")
-    print(message)  # Still print to console just in case you are watching
+    print(message)
 
 
 async def run_scan():
-    print(f"Starting scan... Results will be saved to {OUTPUT_FILE}")
+    print(f"Starting scan... Results saved to {OUTPUT_FILE}")
     log_to_file("--- New Scan Session Started ---")
 
     for i in range(TOTAL_LOOPS):
         print(f"Scanning loop {i + 1}/{TOTAL_LOOPS}...")
 
         try:
-            devices = await BleakScanner.discover(timeout=SCAN_DURATION)
+            # FIX: return_adv=True returns a dictionary of {address: (device, adv_data)}
+            # This ensures we have the AdvertisementData object which definitely has .rssi
+            scanned_results = await BleakScanner.discover(timeout=SCAN_DURATION, return_adv=True)
 
-            # Filter and Sort
-            close_devices = [d for d in devices if d.rssi > MIN_SIGNAL_STRENGTH]
-            close_devices.sort(key=lambda d: d.rssi, reverse=True)  # Strongest first
+            # Convert dictionary values to a list we can sort
+            # Each item is a tuple: (BLEDevice, AdvertisementData)
+            devices_list = list(scanned_results.values())
 
-            if not close_devices:
-                log_to_file(f"Loop {i + 1}: No close devices found.")
+            # Sort by RSSI (signal strength) in the AdvertisementData (item[1])
+            devices_list.sort(key=lambda x: x[1].rssi, reverse=True)
 
-            for d in close_devices:
-                # Format: Name | MAC | Signal
-                # We replace "None" names with "Unknown" for clarity
-                name = d.name if d.name else "Unknown/Hidden"
-                log_line = f"FOUND: {name} | MAC: {d.address} | RSSI: {d.rssi}"
-                log_to_file(log_line)
+            found_close_device = False
+            for device, adv_data in devices_list:
+                rssi = adv_data.rssi
+
+                if rssi > MIN_SIGNAL_STRENGTH:
+                    found_close_device = True
+                    # Use local name from advertisement if available, otherwise device name
+                    name = adv_data.local_name if adv_data.local_name else (device.name or "Unknown")
+
+                    log_line = f"FOUND: {name} | MAC: {device.address} | RSSI: {rssi}"
+                    log_to_file(log_line)
+
+            if not found_close_device:
+                log_to_file(f"Loop {i + 1}: No devices stronger than {MIN_SIGNAL_STRENGTH} found.")
 
         except Exception as e:
             log_to_file(f"Error during scan: {e}")
 
     log_to_file("--- Scan Session Finished ---")
-    print("Done. Check candidates.txt")
+    print("Done.")
 
 # -----------------------------
 # CONFIGURATION
