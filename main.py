@@ -8,6 +8,54 @@ from obd_pi.read_obd import CarLogger
 from utils.video_merger import VideoMerger
 from datetime import datetime
 
+import asyncio
+from bleak import BleakScanner
+
+# --- CONFIGURATION ---
+OUTPUT_FILE = "candidates.txt"
+MIN_SIGNAL_STRENGTH = -80  # dBm (Lower = allow weaker signals. -75 is good for "inside the car")
+SCAN_DURATION = 10.0  # Seconds per scan loop
+TOTAL_LOOPS = 6  # How many times to scan (6 * 10s = 60 seconds total)
+
+
+def log_to_file(message):
+    """Writes a line to the file with a timestamp."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(OUTPUT_FILE, "a") as f:
+        f.write(f"[{timestamp}] {message}\n")
+    print(message)  # Still print to console just in case you are watching
+
+
+async def run_scan():
+    print(f"Starting scan... Results will be saved to {OUTPUT_FILE}")
+    log_to_file("--- New Scan Session Started ---")
+
+    for i in range(TOTAL_LOOPS):
+        print(f"Scanning loop {i + 1}/{TOTAL_LOOPS}...")
+
+        try:
+            devices = await BleakScanner.discover(timeout=SCAN_DURATION)
+
+            # Filter and Sort
+            close_devices = [d for d in devices if d.rssi > MIN_SIGNAL_STRENGTH]
+            close_devices.sort(key=lambda d: d.rssi, reverse=True)  # Strongest first
+
+            if not close_devices:
+                log_to_file(f"Loop {i + 1}: No close devices found.")
+
+            for d in close_devices:
+                # Format: Name | MAC | Signal
+                # We replace "None" names with "Unknown" for clarity
+                name = d.name if d.name else "Unknown/Hidden"
+                log_line = f"FOUND: {name} | MAC: {d.address} | RSSI: {d.rssi}"
+                log_to_file(log_line)
+
+        except Exception as e:
+            log_to_file(f"Error during scan: {e}")
+
+    log_to_file("--- Scan Session Finished ---")
+    print("Done. Check candidates.txt")
+
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
@@ -120,4 +168,8 @@ def main():
 
 
 if __name__ == "__main__":
+    try:
+        asyncio.run(run_scan())
+    except KeyboardInterrupt:
+        print("\nScan stopped by user.")
     main()
