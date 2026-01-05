@@ -8,63 +8,6 @@ from obd_pi.read_obd import CarLogger
 from utils.video_merger import VideoMerger
 from datetime import datetime
 
-import asyncio
-from bleak import BleakScanner
-
-# --- CONFIGURATION ---
-OUTPUT_FILE = "candidates.txt"
-MIN_SIGNAL_STRENGTH = -80  # dBm (Lower = allow weaker signals. -75 is good for "inside the car")
-SCAN_DURATION = 10.0  # Seconds per scan loop
-TOTAL_LOOPS = 6  # How many times to scan (6 * 10s = 60 seconds total)
-
-
-def log_to_file(message):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(OUTPUT_FILE, "a") as f:
-        f.write(f"[{timestamp}] {message}\n")
-    print(message)
-
-
-async def run_scan():
-    print(f"Starting scan... Results saved to {OUTPUT_FILE}")
-    log_to_file("--- New Scan Session Started ---")
-
-    for i in range(TOTAL_LOOPS):
-        print(f"Scanning loop {i + 1}/{TOTAL_LOOPS}...")
-
-        try:
-            # FIX: return_adv=True returns a dictionary of {address: (device, adv_data)}
-            # This ensures we have the AdvertisementData object which definitely has .rssi
-            scanned_results = await BleakScanner.discover(timeout=SCAN_DURATION, return_adv=True)
-
-            # Convert dictionary values to a list we can sort
-            # Each item is a tuple: (BLEDevice, AdvertisementData)
-            devices_list = list(scanned_results.values())
-
-            # Sort by RSSI (signal strength) in the AdvertisementData (item[1])
-            devices_list.sort(key=lambda x: x[1].rssi, reverse=True)
-
-            found_close_device = False
-            for device, adv_data in devices_list:
-                rssi = adv_data.rssi
-
-                if rssi > MIN_SIGNAL_STRENGTH:
-                    found_close_device = True
-                    # Use local name from advertisement if available, otherwise device name
-                    name = adv_data.local_name if adv_data.local_name else (device.name or "Unknown")
-
-                    log_line = f"FOUND: {name} | MAC: {device.address} | RSSI: {rssi}"
-                    log_to_file(log_line)
-
-            if not found_close_device:
-                log_to_file(f"Loop {i + 1}: No devices stronger than {MIN_SIGNAL_STRENGTH} found.")
-
-        except Exception as e:
-            log_to_file(f"Error during scan: {e}")
-
-    log_to_file("--- Scan Session Finished ---")
-    print("Done.")
-
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
@@ -110,9 +53,10 @@ def main():
     print(f"--- Starting Dashcam Session: {CLIP_DIR} ---")
 
     # Merging videos in a thread
-    merger = VideoMerger(root_dir=config["storage"]["clip_dir"], interval=120)
-    merger.set_active_folder(CLIP_DIR)
-    merger.start()
+    # TODO: disabled because maybe little slow
+    # merger = VideoMerger(root_dir=config["storage"]["clip_dir"], interval=120)
+    # merger.set_active_folder(CLIP_DIR)
+    # merger.start()
 
     # 1. Initialize Managers
     ring_buffer = RingBufferManager(CLIP_DIR, MAX_STORAGE_GIGABYTES)
