@@ -94,7 +94,7 @@ class VideoMerger(threading.Thread):
             print(f"[MERGER] Success: {os.path.basename(folder)} -> merged_full.mp4")
             # Optional: Delete the list file to clean up
             os.remove(list_path)
-            # Optional: Delete original segments?
-            # for s in segments: os.remove(s)
+            # Delete original segments
+            for s in segments: os.remove(s)
         else:
             print(f"[MERGER] Failed to merge {folder}")
