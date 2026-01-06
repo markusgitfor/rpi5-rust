@@ -6,7 +6,7 @@ import os
 import logging
 from datetime import datetime
 from typing import Optional, Any
-from obd import Unit
+from obd import Unit, OBDCommand
 from obd.utils import bytes_to_int
 
 
@@ -32,7 +32,7 @@ def decode_mazda_oil(messages):
 
 
 # --- 2. REGISTER THE CUSTOM COMMAND ---
-mazda_oil_cmd = obd.commands.Command(
+mazda_oil_cmd = OBDCommand(
     name='MAZDA_OIL_TEMP',
     description='Mazda SkyActiv Oil Temperature',
     # FIX 2: Use Strings for Service/Command to prevent library errors
@@ -68,7 +68,7 @@ def decode_mazda_oil_pressure(messages):
 
 
 # --- 2. REGISTER THE COMMAND ---
-mazda_oil_press_cmd = obd.commands.Command(
+mazda_oil_press_cmd = OBDCommand(
     name='MAZDA_OIL_PRESS',
     description='Mazda SkyActiv Oil Pressure',
     service='22',  # was 0x22
