@@ -6,6 +6,78 @@ import os
 import logging
 from datetime import datetime
 from typing import Optional, Any
+from obd import Unit
+from obd.utils import bytes_to_int
+
+
+# --- 1. DEFINE THE CUSTOM DECODER ---
+def decode_mazda_oil(messages):
+    """
+    Decodes Mazda SkyActiv Oil Temp from Mode 22 PID 1310.
+    Formula: (A * 256 + B) / 100 - 40
+    """
+    if not messages:
+        return None
+
+    # Get the raw data bytes
+    d = messages[0].data
+
+    # FIX 1: Ensure we actually have 2 bytes before doing 2-byte math.
+    # If we only have 1 byte, 'bytes_to_int' gives a tiny number,
+    # resulting in a temp of -39.9 C.
+    if len(d) >= 2:
+        val = (bytes_to_int(d) / 100.0) - 40.0
+        return val * Unit.CELSIUS
+    return None
+
+
+# --- 2. REGISTER THE CUSTOM COMMAND ---
+mazda_oil_cmd = obd.commands.Command(
+    name='MAZDA_OIL_TEMP',
+    description='Mazda SkyActiv Oil Temperature',
+    # FIX 2: Use Strings for Service/Command to prevent library errors
+    service='22',        # was 0x22
+    command='1310',      # was 0x1310
+    bytes=2,
+    decoder=decode_mazda_oil
+)
+
+obd.commands.MAZDA_OIL_TEMP = mazda_oil_cmd
+
+
+# --- 1. DEFINE THE OIL PRESSURE DECODER ---
+def decode_mazda_oil_pressure(messages):
+    """
+    Decodes Mazda SkyActiv Oil Pressure from Mode 22 PID 14B3.
+    Returns value in kPa.
+    """
+    if not messages:
+        return None
+
+    # Get raw bytes (usually 2 bytes)
+    d = messages[0].data
+
+    if len(d) >= 2:
+        # The raw value is usually in kPa directly for this PID,
+        # or sometimes requires a simple multiplier (e.g., * 1.0)
+        val = bytes_to_int(d)
+
+        # Convert to PSI if preferred: val * 0.145038
+        return val * Unit.KILOPASCAL  # or just return float 'val'
+    return None
+
+
+# --- 2. REGISTER THE COMMAND ---
+mazda_oil_press_cmd = obd.commands.Command(
+    name='MAZDA_OIL_PRESS',
+    description='Mazda SkyActiv Oil Pressure',
+    service='22',  # was 0x22
+    command='14B3',  # was 0x14B3
+    bytes=2,
+    decoder=decode_mazda_oil_pressure
+)
+
+obd.commands.MAZDA_OIL_PRESS = mazda_oil_press_cmd
 
 
 class CarLogger:
@@ -35,9 +107,26 @@ class CarLogger:
         self.OBD_ENABLED: bool = obd_enabled
 
         self.commands_to_watch: dict[str, Any] = {
-            'Coolant': obd.commands.COOLANT_TEMP,
+            'RPM': obd.commands.RPM,
             'Speed': obd.commands.SPEED,
-            'RPM': obd.commands.RPM,  # Added RPM as it's a good connection test
+
+            # --- TEMPERATURES ---
+            'Coolant': obd.commands.COOLANT_TEMP,
+            'Intake Temp': obd.commands.INTAKE_TEMP,
+            'Oil Temp': obd.commands.MAZDA_OIL_TEMP,  # Custom PID we made
+            'Oil Pres': obd.commands.MAZDA_OIL_PRESS,
+
+            # FUEL TRIMS (The "Correction" Factors)
+            'STFT': obd.commands.SHORT_FUEL_TRIM_1,  # Instant correction
+            'LTFT': obd.commands.LONG_FUEL_TRIM_1,  # Learned correction over time
+
+            # --- SKYACTIV-X PERFORMANCE ---
+            'Load': obd.commands.ENGINE_LOAD,  # Percentage of engine power being used
+            'Lambda': obd.commands.COMMANDED_EQUIV_RATIO,  # Lean/Rich monitor
+            'Timing': obd.commands.TIMING_ADVANCE,  # Ignition timing
+
+            # --- PRESSURE ---
+            'Rail Press': obd.commands.FUEL_RAIL_PRESSURE_DIRECT,  # PID 59
         }
 
     def connect(self) -> bool:
@@ -62,7 +151,7 @@ class CarLogger:
                 # Log the internal status to see WHY (e.g., 'ELM327 Gone')
                 logging.error(f"OBD Status: {self.connection.status()}")
                 return False
-        except Exception as e:
+        except Exception:
             logging.exception("Crash during connection attempt:")
             return False
 
@@ -82,8 +171,6 @@ class CarLogger:
     def _log_loop(self) -> None:
         logging.info("Starting logging loop...")
         try:
-            # Check if file exists to avoid overwriting headers if restarting?
-            # For now, we assume 'w' (overwrite) per your original code
             with open(self.filename, mode='w', newline='') as file:
                 writer = csv.writer(file)
                 headers: list[str] = ['Timestamp'] + list(self.commands_to_watch.keys())
@@ -95,26 +182,35 @@ class CarLogger:
 
                     if self.connection and self.connection.is_connected():
                         for name, cmd in self.commands_to_watch.items():
-                            if self.connection.supports(cmd):
+                            # FIX 1: Removed 'if self.connection.supports(cmd)' check
+                            # We force the query because custom PIDs (Mode 22) are rarely 'supported' in the scan.
+
+                            try:
                                 response = self.connection.query(cmd)
+
                                 if not response.is_null():
-                                    # 3. SAFER DATA EXTRACTION
-                                    # Sometimes response.value is not a Quantity (has no magnitude)
                                     if hasattr(response.value, 'magnitude'):
-                                        row_data.append(response.value.magnitude)
+                                        # Rounding makes the CSV much cleaner (e.g., 90.0 instead of 90.00000001)
+                                        row_data.append(round(response.value.magnitude, 2))
                                     else:
                                         row_data.append(response.value)
                                 else:
-                                    row_data.append("")
-                            else:
-                                row_data.append("N/A")
+                                    row_data.append("")  # No data returned
+                            except Exception as e:
+                                logging.debug(f"Error querying {name}: {e}")
+                                row_data.append("ERR")
                     else:
                         logging.warning("OBD disconnected mid-drive!")
-                        row_data.append("DISCONNECTED")
-                        # Optional: Add logic here to try self.connect() again?
+                        # If disconnected, fill the row with empty strings to keep CSV structure valid
+                        row_data.extend(["DISCONNECTED"] * len(self.commands_to_watch))
+
+                        # Optional: simple reconnect logic
+                        # time.sleep(5)
+                        # self.connect()
 
                     writer.writerow(row_data)
                     file.flush()
-                    time.sleep(1.0)
-        except Exception as e:
+
+                    time.sleep(0.5)
+        except Exception:
             logging.exception("Logging thread crashed:")

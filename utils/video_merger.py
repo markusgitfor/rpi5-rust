@@ -95,6 +95,7 @@ class VideoMerger(threading.Thread):
             # Optional: Delete the list file to clean up
             os.remove(list_path)
             # Delete original segments
-            for s in segments: os.remove(s)
+            for s in segments:
+                os.remove(s)
         else:
             print(f"[MERGER] Failed to merge {folder}")
