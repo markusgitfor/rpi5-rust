@@ -63,7 +63,7 @@ class CameraRecorder:
             "--exposure", "short",
             "--awb", "auto",
             "--hdr", self.hdr,
-            "--roi", "0.0,0.0,1.0,0.7716",
+            "--roi", "0.0,0.0,1.0,0.77777",
             "--codec", self.codec,
             "--libav-format", "mpegts",  # mpegts is robust for piping
             "--libav-video-codec-opts", codec_opts_string,
