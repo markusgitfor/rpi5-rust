@@ -31,15 +31,13 @@ def decode_mazda_oil(messages):
     return None
 
 
-# --- 2. REGISTER THE CUSTOM COMMAND ---
+# --- REGISTER MAZDA OIL TEMP ---
 mazda_oil_cmd = OBDCommand(
-    name='MAZDA_OIL_TEMP',
-    description='Mazda SkyActiv Oil Temperature',
-    # FIX 2: Use Strings for Service/Command to prevent library errors
-    service='22',        # was 0x22
-    command='1310',      # was 0x1310
-    bytes=2,
-    decoder=decode_mazda_oil
+    "MAZDA_OIL_TEMP",          # 1. Name
+    "Mazda SkyActiv Oil Temp", # 2. Desc (Not 'description')
+    b"221310",                 # 3. Command (Mode 22 + PID 1310 combined)
+    2,                         # 4. Bytes (Expected return size)
+    decode_mazda_oil,          # 5. Decoder Function
 )
 
 obd.commands.MAZDA_OIL_TEMP = mazda_oil_cmd
@@ -67,14 +65,13 @@ def decode_mazda_oil_pressure(messages):
     return None
 
 
-# --- 2. REGISTER THE COMMAND ---
+# --- REGISTER MAZDA OIL PRESSURE ---
 mazda_oil_press_cmd = OBDCommand(
-    name='MAZDA_OIL_PRESS',
-    description='Mazda SkyActiv Oil Pressure',
-    service='22',  # was 0x22
-    command='14B3',  # was 0x14B3
-    bytes=2,
-    decoder=decode_mazda_oil_pressure
+    "MAZDA_OIL_PRESS",
+    "Mazda SkyActiv Oil Pressure",
+    b"2214B3",                 # Mode 22 + PID 14B3
+    2,
+    decode_mazda_oil_pressure
 )
 
 obd.commands.MAZDA_OIL_PRESS = mazda_oil_press_cmd
