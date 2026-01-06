@@ -16,7 +16,7 @@ recording:
 camera:
   width: 2304
   height: 1296
-  fps: 30
+  fps: 15
   buffer_count: 30
   codec: "libav"                    # "libav" for software encoding, "h264" for hardware
   hdr: "off"                         # "on" or "off"
