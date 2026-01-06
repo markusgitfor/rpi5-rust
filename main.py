@@ -82,16 +82,9 @@ def main():
     threading.Thread(target=ring_buffer_loop, args=(ring_buffer,), daemon=True).start()
 
     # Start OBD (Connect first, then thread)
-    # We do this BEFORE camera so we don't delay video start too much,
-    # but we don't let it block indefinitely.
-    retry = 0
-    while retry < 3:
-        time.sleep(2.5)
-        if car_logger.connect():
-            car_logger.start_logging()
-            break
-        else:
-            retry += 1
+    time.sleep(11)
+    if car_logger.connect():
+        car_logger.start_logging()
 
     # 5. Monitor Loop
     try:
