@@ -39,11 +39,11 @@ class CameraRecorder:
 
         # 1. Configure Video Encoding Options (libav)
         codec_opts = [
-            "crf=20",
+            "crf=23",
             "preset=superfast",
             "profile=high",
-            "maxrate=20M",
-            "bufsize=40M",
+            "maxrate=15M",
+            "bufsize=30M",
             f"g={int(self.fps)}"  # Keep this (1 keyframe/sec) for dashcam safety
         ]
         codec_opts_string = ";".join(codec_opts)
