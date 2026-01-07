@@ -76,6 +76,12 @@ mazda_oil_press_cmd = OBDCommand(
 
 obd.commands.MAZDA_OIL_PRESS = mazda_oil_press_cmd
 
+# Set the header to the Engine Control Module (ECM/PCM) standard ID 7E0
+# TX: 7E0, RX: 7E8
+# TODO: enable these if still does not work!
+# obd.commands.MAZDA_OIL_TEMP.header = b"7E0"
+# obd.commands.MAZDA_OIL_PRESS.header = b"7E0"
+
 
 class CarLogger:
     def __init__(self, port: str, output_dir: str, obd_enabled: bool) -> None:
@@ -138,6 +144,10 @@ class CarLogger:
             # We explicitly set protocol to None (Auto) but you can try "6" (ISO 15765-4 CAN 11/500)
             # if auto-negotiation fails frequently with the Carly.
             self.connection = obd.OBD(self.port, fast=False, timeout=30)
+
+            # Add support for custom PID
+            self.connection.supported_commands.add(obd.commands.MAZDA_OIL_TEMP)
+            self.connection.supported_commands.add(obd.commands.MAZDA_OIL_PRESS)
 
             if self.connection.is_connected():
                 logging.info(f"Connected successfully! Protocol: {self.connection.protocol_name()}")
