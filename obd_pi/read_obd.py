@@ -125,7 +125,8 @@ class CarLogger:
 
             # --- SKYACTIV-X PERFORMANCE ---
             'Load': obd.commands.ENGINE_LOAD,  # Percentage of engine power being used
-            'Lambda': obd.commands.COMMANDED_EQUIV_RATIO,  # Lean/Rich monitor
+            # Shows wrong values for now!!!
+            # 'Lambda': obd.commands.COMMANDED_EQUIV_RATIO,  # Lean/Rich monitor
             'Timing': obd.commands.TIMING_ADVANCE,  # Ignition timing
 
             # --- PRESSURE ---
