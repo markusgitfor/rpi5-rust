@@ -27,7 +27,7 @@ def decode_mazda_oil(messages):
     # resulting in a temp of -39.9 C.
     if len(d) >= 2:
         val = (bytes_to_int(d) / 100.0) - 40.0
-        return val * Unit.CELSIUS
+        return val * obd.ureg.celsius
     return None
 
 
@@ -61,7 +61,7 @@ def decode_mazda_oil_pressure(messages):
         val = bytes_to_int(d)
 
         # Convert to PSI if preferred: val * 0.145038
-        return val * Unit.KILOPASCAL  # or just return float 'val'
+        return val * obd.ureg.kilopascal  # or just return float 'val'
     return None
 
 
