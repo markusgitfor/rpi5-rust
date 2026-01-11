@@ -7,3 +7,4 @@ pyflakes==3.4.0
 obd==0.7.3
 bleak
 ble-serial
+pandas
