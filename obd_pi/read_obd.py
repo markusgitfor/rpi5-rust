@@ -116,12 +116,13 @@ class CarLogger:
             # --- TEMPERATURES ---
             'Coolant': obd.commands.COOLANT_TEMP,
             'Intake Temp': obd.commands.INTAKE_TEMP,
-            'Oil Temp': obd.commands.MAZDA_OIL_TEMP,  # Custom PID we made
+            # 'Oil Temp': obd.commands.MAZDA_OIL_TEMP,  # Custom PID we made
+            'Oil Temp': obd.commands.OIL_TEMP,
             # 'Oil Pres': obd.commands.MAZDA_OIL_PRESS,  # This in only switch, that tells if the pressure is ok or not, gets values 0 and 1
 
             # FUEL TRIMS (The "Correction" Factors)
-            'STFT': obd.commands.SHORT_FUEL_TRIM_1,  # Instant correction
-            'LTFT': obd.commands.LONG_FUEL_TRIM_1,  # Learned correction over time
+            # 'STFT': obd.commands.SHORT_FUEL_TRIM_1,  # Instant correction
+            # 'LTFT': obd.commands.LONG_FUEL_TRIM_1,  # Learned correction over time
 
             # --- SKYACTIV-X PERFORMANCE ---
             'Load': obd.commands.ENGINE_LOAD,  # Percentage of engine power being used
