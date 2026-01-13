@@ -25,8 +25,8 @@ def decode_mazda_oil(messages):
     # FIX 1: Ensure we actually have 2 bytes before doing 2-byte math.
     # If we only have 1 byte, 'bytes_to_int' gives a tiny number,
     # resulting in a temp of -39.9 C.
-    if len(d) >= 2:
-        val = (bytes_to_int(d) / 100.0) - 40.0
+    if len(d) >= 1:
+        val = bytes_to_int(d)- 40.0
         return Unit.Quantity(val, Unit.celsius)
     return None
 
@@ -35,12 +35,22 @@ def decode_mazda_oil(messages):
 mazda_oil_cmd = OBDCommand(
     "MAZDA_OIL_TEMP",          # 1. Name
     "Mazda SkyActiv Oil Temp", # 2. Desc (Not 'description')
-    b"221310",                 # 3. Command (Mode 22 + PID 1310 combined)
-    2,                         # 4. Bytes (Expected return size)
+    b"22032B",                 # 3. Command (Mode 22 + PID 1310 combined)
+    1,                         # 4. Bytes (Expected return size)
+    decode_mazda_oil,          # 5. Decoder Function
+)
+
+# --- REGISTER MAZDA OIL TEMP ---
+mazda_oil_cmd2 = OBDCommand(
+    "MAZDA_OIL_TEMP2",          # 1. Name
+    "Mazda SkyActiv Oil Temp2", # 2. Desc (Not 'description')
+    b"22042B",                 # 3. Command (Mode 22 + PID 1310 combined)
+    1,                         # 4. Bytes (Expected return size)
     decode_mazda_oil,          # 5. Decoder Function
 )
 
 obd.commands.MAZDA_OIL_TEMP = mazda_oil_cmd
+obd.commands.MAZDA_OIL_TEMP2 = mazda_oil_cmd2
 
 
 # --- 1. DEFINE THE OIL PRESSURE DECODER ---
@@ -116,8 +126,8 @@ class CarLogger:
             # --- TEMPERATURES ---
             'Coolant': obd.commands.COOLANT_TEMP,
             'Intake Temp': obd.commands.INTAKE_TEMP,
-            # 'Oil Temp': obd.commands.MAZDA_OIL_TEMP,  # Custom PID we made
-            'Oil Temp': obd.commands.OIL_TEMP,
+            'Oil Temp': obd.commands.MAZDA_OIL_TEMP,  # Custom PID we made
+            'Oil Temp2': obd.commands.MAZDA_OIL_TEMP2,  # Custom PID we made
             # 'Oil Pres': obd.commands.MAZDA_OIL_PRESS,  # This in only switch, that tells if the pressure is ok or not, gets values 0 and 1
 
             # FUEL TRIMS (The "Correction" Factors)
@@ -149,6 +159,7 @@ class CarLogger:
 
             # Add support for custom PID
             self.connection.supported_commands.add(obd.commands.MAZDA_OIL_TEMP)
+            self.connection.supported_commands.add(obd.commands.MAZDA_OIL_TEMP2)
             self.connection.supported_commands.add(obd.commands.MAZDA_OIL_PRESS)
 
             if self.connection.is_connected():
