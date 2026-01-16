@@ -26,8 +26,13 @@ def decode_mazda_oil(messages):
     # If we only have 1 byte, 'bytes_to_int' gives a tiny number,
     # resulting in a temp of -39.9 C.
     if len(d) >= 2:
-        val = bytes_to_int(d)- 40.0
-        return Unit.Quantity(val, Unit.celsius)
+        # bytes_to_int(d) automatically does (A * 256 + B) for 2 bytes
+        raw_val = bytes_to_int(d)
+
+        # Apply the scaling factor (divide by 100) then offset (-40)
+        temp_c = (raw_val / 100.0) - 40.0
+
+        return Unit.Quantity(temp_c, Unit.celsius)
     return None
 
 
