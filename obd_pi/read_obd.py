@@ -25,7 +25,7 @@ def decode_mazda_oil(messages):
     # FIX 1: Ensure we actually have 2 bytes before doing 2-byte math.
     # If we only have 1 byte, 'bytes_to_int' gives a tiny number,
     # resulting in a temp of -39.9 C.
-    if len(d) >= 1:
+    if len(d) >= 2:
         val = bytes_to_int(d)- 40.0
         return Unit.Quantity(val, Unit.celsius)
     return None
@@ -35,23 +35,13 @@ def decode_mazda_oil(messages):
 mazda_oil_cmd = OBDCommand(
     "MAZDA_OIL_TEMP",          # 1. Name
     "Mazda SkyActiv Oil Temp", # 2. Desc (Not 'description')
-    b"22032B",                 # 3. Command (Mode 22 + PID 1310 combined)
-    1,                         # 4. Bytes (Expected return size)
-    decode_mazda_oil,          # 5. Decoder Function
-)
-
-# --- REGISTER MAZDA OIL TEMP ---
-mazda_oil_cmd2 = OBDCommand(
-    "MAZDA_OIL_TEMP2",          # 1. Name
-    "Mazda SkyActiv Oil Temp2", # 2. Desc (Not 'description')
-    b"22042B",                 # 3. Command (Mode 22 + PID 1310 combined)
-    1,                         # 4. Bytes (Expected return size)
-    decode_mazda_oil,          # 5. Decoder Function
+    b"221310",  # FIXED: Changed 032B to 1310
+    2,  # FIXED: Expect 2 bytes return
+    decode_mazda_oil,
+    header=b"7E0"  # FIXED: Force ECU header (7E0 is Engine)
 )
 
 obd.commands.MAZDA_OIL_TEMP = mazda_oil_cmd
-obd.commands.MAZDA_OIL_TEMP2 = mazda_oil_cmd2
-
 
 # --- 1. DEFINE THE OIL PRESSURE DECODER ---
 def decode_mazda_oil_pressure(messages):
