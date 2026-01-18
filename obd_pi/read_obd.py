@@ -122,7 +122,6 @@ class CarLogger:
             'Coolant': obd.commands.COOLANT_TEMP,
             'Intake Temp': obd.commands.INTAKE_TEMP,
             'Oil Temp': obd.commands.MAZDA_OIL_TEMP,  # Custom PID we made
-            'Oil Temp2': obd.commands.MAZDA_OIL_TEMP2,  # Custom PID we made
             # 'Oil Pres': obd.commands.MAZDA_OIL_PRESS,  # This in only switch, that tells if the pressure is ok or not, gets values 0 and 1
 
             # FUEL TRIMS (The "Correction" Factors)
