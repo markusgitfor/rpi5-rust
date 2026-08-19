@@ -1,0 +1,26 @@
+# Python bytecode and tooling caches
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local environments
+venv/
+.venv/
+
+# IDE settings
+.idea/
+.vscode/
+
+# Generated recording and camera-test output
+videos/
+focus_test/
+telemetry.csv
+debug.log
+merge_list.txt
+
+# Generated post-processing output
+*_overlay.mp4
+*_undistorted.mp4

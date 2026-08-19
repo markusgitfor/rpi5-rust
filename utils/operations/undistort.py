@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from base import VideoOperation
+from utils.operations.base import VideoOperation
 
 
 class UndistortOperation(VideoOperation):

@@ -59,7 +59,11 @@ def main():
     # merger.start()
 
     # 1. Initialize Managers
-    ring_buffer = RingBufferManager(CLIP_DIR, MAX_STORAGE_GIGABYTES)
+    ring_buffer = RingBufferManager(
+        config["storage"]["clip_dir"],
+        MAX_STORAGE_GIGABYTES,
+        protected_directories=[CLIP_DIR],
+    )
     recorder = CameraRecorder(
         output_dir=CLIP_DIR,
         width=CAM_WIDTH,
@@ -115,7 +119,7 @@ def main():
     finally:
         # 6. Clean Shutdown
         recorder.stop()
-        # car_logger.stop_logging() # Uncomment if you have this object
+        car_logger.stop_logging()
         print("[MAIN] Shutdown complete.")
 
 

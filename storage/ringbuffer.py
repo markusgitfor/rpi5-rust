@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import Iterable, List, Optional
 
 
 def _calculate_total_size(files: List[Path]) -> int:
@@ -16,13 +16,22 @@ class RingBufferManager:
     the oldest files (and empty subfolders) when the limit is exceeded.
     """
 
-    def __init__(self, base_directory: str, max_storage_gigabytes: int = 10):
+    def __init__(
+        self,
+        base_directory: str,
+        max_storage_gigabytes: int = 10,
+        protected_directories: Optional[Iterable[str]] = None,
+    ):
         """
         :param base_directory: Root path containing session subfolders
-        :param max_storage_bytes: Maximum allowed storage in bytes (default 10 GB)
+        :param max_storage_gigabytes: Maximum allowed storage in GiB (default 10 GiB).
+        :param protected_directories: Directories whose files must not be deleted.
         """
         self.base_directory = Path(base_directory)
         self.max_storage_bytes = max_storage_gigabytes * 1024 ** 3
+        self.protected_directories = {
+            Path(directory).resolve() for directory in (protected_directories or [])
+        }
         self.base_directory.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------ #
@@ -37,8 +46,18 @@ class RingBufferManager:
         # rglob("*") searches recursively through all subdirectories.
         # We filter for is_file() to ignore directory names in the list.
         return sorted(
-            [f for f in self.base_directory.rglob("*") if f.is_file()],
+            [
+                f for f in self.base_directory.rglob("*")
+                if f.is_file() and not self._is_protected(f)
+            ],
             key=lambda f: f.stat().st_mtime
+        )
+
+    def _is_protected(self, file_path: Path) -> bool:
+        resolved_path = file_path.resolve()
+        return any(
+            resolved_path.is_relative_to(directory)
+            for directory in self.protected_directories
         )
 
     def _remove_empty_parents(self, file_path: Path):
@@ -67,8 +86,9 @@ class RingBufferManager:
         Deletes the oldest files across ALL subfolders until
         combined total size is below the storage limit.
         """
+        all_files = [f for f in self.base_directory.rglob("*") if f.is_file()]
+        total_size = _calculate_total_size(all_files)
         files = self._get_all_files()
-        total_size = _calculate_total_size(files)
 
         # Check if we are over the limit
         while total_size > self.max_storage_bytes and files:

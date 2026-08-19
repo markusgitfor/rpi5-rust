@@ -39,7 +39,7 @@ def decode_mazda_oil(messages):
 # --- REGISTER MAZDA OIL TEMP ---
 mazda_oil_cmd = OBDCommand(
     "MAZDA_OIL_TEMP",          # 1. Name
-    "Mazda SkyActiv Oil Temp", # 2. Desc (Not 'description')
+    "Mazda SkyActiv Oil Temp",  # 2. Desc (Not 'description')
     b"221310",  # FIXED: Changed 032B to 1310
     2,  # FIXED: Expect 2 bytes return
     decode_mazda_oil,
@@ -48,7 +48,9 @@ mazda_oil_cmd = OBDCommand(
 
 obd.commands.MAZDA_OIL_TEMP = mazda_oil_cmd
 
-# --- 1. DEFINE THE OIL PRESSURE DECODER ---
+# --- DEFINE THE OIL PRESSURE DECODER ---
+
+
 def decode_mazda_oil_pressure(messages):
     """
     Decodes Mazda SkyActiv Oil Pressure from Mode 22 PID 14B3.
@@ -122,7 +124,7 @@ class CarLogger:
             'Coolant': obd.commands.COOLANT_TEMP,
             'Intake Temp': obd.commands.INTAKE_TEMP,
             'Oil Temp': obd.commands.MAZDA_OIL_TEMP,  # Custom PID we made
-            # 'Oil Pres': obd.commands.MAZDA_OIL_PRESS,  # This in only switch, that tells if the pressure is ok or not, gets values 0 and 1
+            # 'Oil Pres': obd.commands.MAZDA_OIL_PRESS,  # This is only a pressure-status switch (0 or 1).
 
             # FUEL TRIMS (The "Correction" Factors)
             # 'STFT': obd.commands.SHORT_FUEL_TRIM_1,  # Instant correction
@@ -153,7 +155,6 @@ class CarLogger:
 
             # Add support for custom PID
             self.connection.supported_commands.add(obd.commands.MAZDA_OIL_TEMP)
-            self.connection.supported_commands.add(obd.commands.MAZDA_OIL_TEMP2)
             self.connection.supported_commands.add(obd.commands.MAZDA_OIL_PRESS)
 
             if self.connection.is_connected():
@@ -191,7 +192,7 @@ class CarLogger:
                 writer.writerow(headers)
 
                 while self.running:
-                    current_time: str = datetime.now().strftime("%H:%M:%S")
+                    current_time: str = datetime.now().isoformat(timespec="milliseconds")
                     row_data: list[Any] = [current_time]
 
                     if self.connection and self.connection.is_connected():

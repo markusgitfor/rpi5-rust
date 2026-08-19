@@ -1,0 +1,20 @@
+[project]
+name = "rpi5-dashcam"
+version = "0.1.0"
+description = "Raspberry Pi 5 dashcam recorder with OBD telemetry"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ble-serial",
+    "bleak",
+    "numpy==2.2.6",
+    "obd==0.7.3",
+    "opencv-python==4.12.0.88",
+    "pandas",
+    "PyYAML>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "flake8==7.3.0",
+]
