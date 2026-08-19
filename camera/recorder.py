@@ -101,7 +101,7 @@ class CameraRecorder:
         self.rpicam_process = subprocess.Popen(
             rpicam_vid_cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE  # Keep pipe open but don't read nicely yet to avoid blocking
+            stderr=subprocess.DEVNULL,
         )
 
         # Start ffmpeg connecting stdin to rpicam's stdout

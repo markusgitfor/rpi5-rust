@@ -2,17 +2,12 @@
 # Dashcam Project Makefile
 # ----------------------------
 
-# Name of the virtual environment folder
-VENV = venv
-
-# Python interpreter
-PYTHON = python3
-
-# Requirements file
-REQS = requirements.txt
-
 # Entry point of the project
 ENTRY = main.py
+
+# uv is installed per-user by the official installer. Override with `make UV=uv ...`
+# when uv is already available on PATH.
+UV ?= $(HOME)/.local/bin/uv
 
 # ----------------------------
 # Install system dependencies
@@ -21,7 +16,10 @@ ENTRY = main.py
 systemdeps:
 	@echo "Installing system dependencies for Pi Camera..."
 	sudo apt update
-	sudo apt install -y libcamera-apps libcamera-dev python3-libcamera
+	sudo apt install -y curl libcamera-apps libcamera-dev python3-libcamera
+	@if [ ! -x "$(UV)" ]; then \
+	    curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	fi
 	
 # ----------------------------
 # Run code checks
@@ -29,30 +27,15 @@ systemdeps:
 .PHONY: code-check
 code-check:
 	@echo "Running flake8 code check..."
-	$(VENV)/bin/flake8 . --max-line-length=120 --exclude venv,.venv  # Ignore the 'venv' directory
+	$(UV) run flake8 . --max-line-length=120 --exclude venv,.venv
 
 # ----------------------------
-# Create virtual environment & install Python packages
+# Install Python packages
 # ----------------------------
 .PHONY: install
-install: venv
+install:
 	@echo "Installing Python dependencies..."
-	$(VENV)/bin/pip install --upgrade pip setuptools wheel
-	@if [ -f $(REQS) ]; then \
-	    PIP_CONFIG_FILE=/dev/null \
-	    $(VENV)/bin/pip install \
-	        --prefer-binary \
-	        --index-url https://pypi.org/simple \
-	        -r $(REQS); \
-	else \
-	    echo "No requirements.txt found, skipping pip install."; \
-	fi
-
-.PHONY: venv
-venv:
-	@echo "Creating Python virtual environment (with access to system packages)..."
-	$(PYTHON) -m venv --system-site-packages $(VENV)
-	@echo "Virtual environment created in $(VENV)"
+	$(UV) sync
 
 # ----------------------------
 # Run the dashcam project
@@ -60,22 +43,7 @@ venv:
 .PHONY: run
 run:
 	@echo "Running dashcam project..."
-	$(VENV)/bin/python3 $(ENTRY)
-
-# ----------------------------
-# Clean virtual environment
-# ----------------------------
-.PHONY: clean
-clean:
-	rm -rf $(VENV)
-	@echo "Removed virtual environment $(VENV)"
-
-# ----------------------------
-# Build docker
-# ----------------------------
-.PHONY: docker-build
-docker-build:
-	docker build -t rpi-camera:latest .
+	$(UV) run python $(ENTRY)
 
 # ----------------------------
 # Update branch

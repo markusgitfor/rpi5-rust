@@ -23,7 +23,7 @@ def calibrate_from_video(video_path, checkerboard_size, square_size_mm=100, erro
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"Error: Could not open video {video_path}")
-        return
+        return None, None
 
     frame_count = 0
     success_count = 0
@@ -122,9 +122,7 @@ def calibrate_from_video(video_path, checkerboard_size, square_size_mm=100, erro
     return mtx_final, dist_final
 
 
-# --- CONFIGURATION ---
-CHECKERBOARD_DIMS = (10, 7)
-VIDEO_FILE = '/home/markus/Videos/rasp/output.mp4'
-
-# Set threshold to 0.5 or 1.0 depending on how strict you want to be
-calibrate_from_video(VIDEO_FILE, CHECKERBOARD_DIMS, error_threshold=0.5)
+if __name__ == "__main__":
+    CHECKERBOARD_DIMS = (10, 7)
+    VIDEO_FILE = '/home/markus/Videos/rasp/output.mp4'
+    calibrate_from_video(VIDEO_FILE, CHECKERBOARD_DIMS, error_threshold=0.5)

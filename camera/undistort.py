@@ -87,13 +87,12 @@ def undistort_video_file(input_path, output_path, calibration_file, crop=True):
     out.release()
 
     print(f"\n[INFO] Done! Saved to '{output_path}'")
-    print(f"[INFO] Time taken: {duration:.2f} seconds ({frame_idx / duration:.2f} fps processed)")
+    processing_fps = frame_idx / duration if duration else 0
+    print(f"[INFO] Time taken: {duration:.2f} seconds ({processing_fps:.2f} fps processed)")
 
 
-# --- CONFIGURATION ---
-INPUT_VIDEO = '/home/markus/Videos/rasp-all/videos/bc4c/merged_output.mp4'
-OUTPUT_VIDEO = '/home/markus/Videos/rasp-all/videos/bc4c/merged_output_undistorted.mp4'
-CALIB_FILE = 'calibration_data.npz'
-
-# Set crop=True to cut off black borders, False to keep them
-undistort_video_file(INPUT_VIDEO, OUTPUT_VIDEO, CALIB_FILE, crop=True)
+if __name__ == "__main__":
+    INPUT_VIDEO = '/home/markus/Videos/rasp-all/videos/bc4c/merged_output.mp4'
+    OUTPUT_VIDEO = '/home/markus/Videos/rasp-all/videos/bc4c/merged_output_undistorted.mp4'
+    CALIB_FILE = 'calibration_data.npz'
+    undistort_video_file(INPUT_VIDEO, OUTPUT_VIDEO, CALIB_FILE, crop=True)
