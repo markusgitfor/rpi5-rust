@@ -15,43 +15,6 @@ pub struct ObdCommandConfig {
     pub address: String,
 }
 
-pub fn default_obd_commands() -> Vec<ObdCommandConfig> {
-    vec![
-        ObdCommandConfig {
-            name: "RPM".to_string(),
-            address: "010C".to_string(),
-        },
-        ObdCommandConfig {
-            name: "Speed".to_string(),
-            address: "010D".to_string(),
-        },
-        ObdCommandConfig {
-            name: "Coolant".to_string(),
-            address: "0105".to_string(),
-        },
-        ObdCommandConfig {
-            name: "Intake Temp".to_string(),
-            address: "010F".to_string(),
-        },
-        ObdCommandConfig {
-            name: "Oil Temp".to_string(),
-            address: "221310".to_string(),
-        },
-        ObdCommandConfig {
-            name: "Load".to_string(),
-            address: "0104".to_string(),
-        },
-        ObdCommandConfig {
-            name: "Timing".to_string(),
-            address: "010E".to_string(),
-        },
-        ObdCommandConfig {
-            name: "Rail Press".to_string(),
-            address: "0159".to_string(),
-        },
-    ]
-}
-
 pub struct CarLogger {
     port: String,
     output_dir: String,
@@ -68,9 +31,7 @@ impl CarLogger {
         obd_enabled: bool,
         commands: Option<Vec<ObdCommandConfig>>,
     ) -> Self {
-        let commands = commands
-            .filter(|c| !c.is_empty())
-            .unwrap_or_else(default_obd_commands);
+        let commands = commands.unwrap_or_default();
         Self {
             port,
             output_dir,
@@ -372,7 +333,7 @@ mod tests {
     }
 
     #[test]
-    fn test_car_logger_custom_and_default_commands() {
+    fn test_car_logger_uses_only_configured_commands() {
         let custom_cmds = vec![
             ObdCommandConfig {
                 name: "Battery Voltage".into(),
@@ -392,8 +353,8 @@ mod tests {
         );
         assert_eq!(logger_custom.commands(), &custom_cmds);
 
-        let logger_default = CarLogger::new("/dev/rfcomm0".into(), "/tmp/test".into(), true, None);
-        assert_eq!(logger_default.commands(), &default_obd_commands());
+        let logger_none = CarLogger::new("/dev/rfcomm0".into(), "/tmp/test".into(), true, None);
+        assert!(logger_none.commands().is_empty());
 
         let logger_empty = CarLogger::new(
             "/dev/rfcomm0".into(),
@@ -401,6 +362,6 @@ mod tests {
             true,
             Some(vec![]),
         );
-        assert_eq!(logger_empty.commands(), &default_obd_commands());
+        assert!(logger_empty.commands().is_empty());
     }
 }
