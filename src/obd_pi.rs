@@ -19,24 +19,44 @@ pub struct CarLogger {
     port: String,
     output_dir: String,
     obd_enabled: bool,
+    baudrate: u32,
+    query_interval_ms: u64,
+    timeout_ms: u64,
+    init_commands: Vec<String>,
     commands: Vec<ObdCommandConfig>,
     running: Arc<AtomicBool>,
     thread: Option<JoinHandle<()>>,
 }
 
 impl CarLogger {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         port: String,
         output_dir: String,
         obd_enabled: bool,
+        baudrate: Option<u32>,
+        query_interval_ms: Option<u64>,
+        timeout_ms: Option<u64>,
+        init_commands: Option<Vec<String>>,
         commands: Option<Vec<ObdCommandConfig>>,
     ) -> Self {
-        let commands = commands.unwrap_or_default();
         Self {
             port,
             output_dir,
             obd_enabled,
-            commands,
+            baudrate: baudrate.unwrap_or(38400),
+            query_interval_ms: query_interval_ms.unwrap_or(500),
+            timeout_ms: timeout_ms.unwrap_or(500),
+            init_commands: init_commands.unwrap_or_else(|| {
+                vec![
+                    "AT Z".into(),
+                    "AT E0".into(),
+                    "AT L0".into(),
+                    "AT S0".into(),
+                    "AT SP 0".into(),
+                ]
+            }),
+            commands: commands.unwrap_or_default(),
             running: Arc::new(AtomicBool::new(false)),
             thread: None,
         }
@@ -52,15 +72,22 @@ impl CarLogger {
             return false;
         }
 
-        info!("Attempting connection to {}...", self.port);
-        match serialport::new(&self.port, 38400)
-            .timeout(Duration::from_millis(500))
+        info!(
+            "Attempting connection to {} at {} baud...",
+            self.port, self.baudrate
+        );
+        match serialport::new(&self.port, self.baudrate)
+            .timeout(Duration::from_millis(self.timeout_ms))
             .open()
         {
             Ok(mut port) => {
-                let init_cmds = ["AT Z\r", "AT E0\r", "AT L0\r", "AT S0\r", "AT SP 0\r"];
-                for cmd in init_cmds.iter() {
-                    let _ = port.write_all(cmd.as_bytes());
+                for cmd in &self.init_commands {
+                    let full_cmd = if cmd.ends_with('\r') {
+                        cmd.clone()
+                    } else {
+                        format!("{}\r", cmd)
+                    };
+                    let _ = port.write_all(full_cmd.as_bytes());
                     thread::sleep(Duration::from_millis(100));
                     let mut buf = [0; 256];
                     let _ = port.read(&mut buf);
@@ -79,6 +106,9 @@ impl CarLogger {
     pub fn start_logging(&mut self) {
         self.running.store(true, Ordering::SeqCst);
         let port_name = self.port.clone();
+        let baudrate = self.baudrate;
+        let timeout_ms = self.timeout_ms;
+        let query_interval_ms = self.query_interval_ms;
         let output_dir = self.output_dir.clone();
         let running = Arc::clone(&self.running);
         let commands = self.commands.clone();
@@ -94,8 +124,8 @@ impl CarLogger {
             }
             let _ = writer.write_record(&headers);
 
-            let mut port = match serialport::new(&port_name, 38400)
-                .timeout(Duration::from_millis(500))
+            let mut port = match serialport::new(&port_name, baudrate)
+                .timeout(Duration::from_millis(timeout_ms))
                 .open()
             {
                 Ok(p) => p,
@@ -113,7 +143,8 @@ impl CarLogger {
                         let mut resp = String::new();
                         let mut buf = [0; 1];
                         let start = std::time::Instant::now();
-                        while start.elapsed() < Duration::from_millis(300) {
+                        let max_read_wait = Duration::from_millis(timeout_ms.min(300));
+                        while start.elapsed() < max_read_wait {
                             if let Ok(n) = port.read(&mut buf) {
                                 if n > 0 {
                                     let c = buf[0] as char;
@@ -135,7 +166,7 @@ impl CarLogger {
 
                 let _ = writer.write_record(&row);
                 let _ = writer.flush();
-                thread::sleep(Duration::from_millis(500));
+                thread::sleep(Duration::from_millis(query_interval_ms));
             }
         }));
     }
@@ -349,17 +380,34 @@ mod tests {
             "/dev/rfcomm0".into(),
             "/tmp/test".into(),
             true,
+            Some(115200),
+            Some(250),
+            Some(300),
+            Some(vec!["AT Z".into()]),
             Some(custom_cmds.clone()),
         );
         assert_eq!(logger_custom.commands(), &custom_cmds);
 
-        let logger_none = CarLogger::new("/dev/rfcomm0".into(), "/tmp/test".into(), true, None);
+        let logger_none = CarLogger::new(
+            "/dev/rfcomm0".into(),
+            "/tmp/test".into(),
+            true,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
         assert!(logger_none.commands().is_empty());
 
         let logger_empty = CarLogger::new(
             "/dev/rfcomm0".into(),
             "/tmp/test".into(),
             true,
+            None,
+            None,
+            None,
+            None,
             Some(vec![]),
         );
         assert!(logger_empty.commands().is_empty());

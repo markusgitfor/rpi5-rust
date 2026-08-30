@@ -123,6 +123,16 @@ storage:
 obd:
   port: "/tmp/ttyCarly"              # Serial/RFCOMM port or PTY for OBD-II adapter
   enabled: true                      # Enable or disable telemetry recording
+  baudrate: 38400                    # Serial communication baud rate
+  startup_delay_seconds: 11          # Delay before initial OBD connection attempt
+  query_interval_ms: 500             # Polling interval between telemetry queries (ms)
+  timeout_ms: 500                    # Serial read/write timeout (ms)
+  init_commands:                     # AT commands sent during adapter initialization
+    - "AT Z"
+    - "AT E0"
+    - "AT L0"
+    - "AT S0"
+    - "AT SP 0"
   commands:                          # Configurable OBD-II PIDs and custom addresses to query
     - name: "RPM"                    # CSV header label
       address: "010C"                # OBD PID / command hex address
@@ -143,6 +153,7 @@ obd:
 
 recording:
   segment_seconds: 60                # Length of each segmented video clip (in seconds)
+  restart_check_interval_seconds: 2  # Interval to verify subprocess health (seconds)
 
 camera:
   width: 2304                        # Video capture resolution width
@@ -152,6 +163,12 @@ camera:
   codec: "libav"                     # Video codec: "libav" (software) or "h264" (hardware)
   hdr: "off"                         # HDR mode: "on" or "off"
   preview: false                     # Enable or disable live preview window
+  autofocus_mode: "manual"           # "manual", "auto", "continuous"
+  lens_position: 0.2                 # Fixed lens focus position (dioptres)
+  denoise: "cdn_off"                 # Denoise mode: "cdn_off", "cdn_fast", "cdn_hq"
+  exposure: "short"                  # Exposure profile: "short", "normal", "sport"
+  awb: "auto"                        # Auto white balance: "auto", "incandescent", etc.
+  roi: "0.0,0.0,1.0,0.77777"         # Sensor Region of Interest (x,y,w,h)
   extra_args: []                     # Additional flags passed directly to rpicam-vid
   # libav_opts:                      # Advanced encoding options for libav (optional)
   #   - "crf=23"

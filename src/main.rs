@@ -23,6 +23,11 @@ struct StorageConfig {
 struct ObdConfig {
     port: Option<String>,
     enabled: Option<bool>,
+    baudrate: Option<u32>,
+    startup_delay_seconds: Option<u64>,
+    query_interval_ms: Option<u64>,
+    timeout_ms: Option<u64>,
+    init_commands: Option<Vec<String>>,
     #[serde(default, alias = "pids", alias = "data", alias = "queries")]
     commands: Option<Vec<ObdCommandConfig>>,
 }
@@ -30,6 +35,7 @@ struct ObdConfig {
 #[derive(Deserialize)]
 struct RecordingConfig {
     segment_seconds: u32,
+    restart_check_interval_seconds: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -41,6 +47,12 @@ struct CameraConfig {
     codec: String,
     hdr: String,
     preview: bool,
+    autofocus_mode: Option<String>,
+    lens_position: Option<f32>,
+    denoise: Option<String>,
+    exposure: Option<String>,
+    awb: Option<String>,
+    roi: Option<String>,
     extra_args: Vec<String>,
     libav_opts: Option<Vec<String>>,
 }
@@ -107,6 +119,12 @@ fn main() {
         config.camera.codec.clone(),
         config.camera.hdr.clone(),
         config.camera.preview,
+        config.camera.autofocus_mode.clone(),
+        config.camera.lens_position,
+        config.camera.denoise.clone(),
+        config.camera.exposure.clone(),
+        config.camera.awb.clone(),
+        config.camera.roi.clone(),
         config.camera.extra_args.clone(),
         config.camera.libav_opts.clone(),
     );
@@ -122,12 +140,32 @@ fn main() {
         .and_then(|o| o.port.clone())
         .unwrap_or_else(|| "/dev/rfcomm0".to_string());
     let obd_enabled = config.obd.as_ref().and_then(|o| o.enabled).unwrap_or(false);
+    let obd_baudrate = config.obd.as_ref().and_then(|o| o.baudrate);
+    let obd_startup_delay = config
+        .obd
+        .as_ref()
+        .and_then(|o| o.startup_delay_seconds)
+        .unwrap_or(11);
+    let obd_query_interval = config.obd.as_ref().and_then(|o| o.query_interval_ms);
+    let obd_timeout = config.obd.as_ref().and_then(|o| o.timeout_ms);
+    let obd_init_cmds = config.obd.as_ref().and_then(|o| o.init_commands.clone());
     let obd_commands = config.obd.as_ref().and_then(|o| o.commands.clone());
 
-    let mut car_logger = CarLogger::new(obd_port, clip_dir.clone(), obd_enabled, obd_commands);
+    let mut car_logger = CarLogger::new(
+        obd_port,
+        clip_dir.clone(),
+        obd_enabled,
+        obd_baudrate,
+        obd_query_interval,
+        obd_timeout,
+        obd_init_cmds,
+        obd_commands,
+    );
 
     thread::spawn(move || {
-        thread::sleep(Duration::from_secs(11));
+        if obd_startup_delay > 0 {
+            thread::sleep(Duration::from_secs(obd_startup_delay));
+        }
         if car_logger.connect() {
             car_logger.start_logging();
             // Let it run forever in this thread until app stops (threads are killed when main dies)
@@ -143,10 +181,12 @@ fn main() {
 
     let (_tx, rx) = std::sync::mpsc::channel::<()>();
 
+    let restart_interval = config.recording.restart_check_interval_seconds.unwrap_or(2);
+
     thread::spawn(move || {
         recorder.start();
         loop {
-            thread::sleep(Duration::from_secs(2));
+            thread::sleep(Duration::from_secs(restart_interval));
             if !recorder.is_running() {
                 info!("[MAIN] Recorder pipeline crashed/stopped. Restarting...");
                 recorder.stop();
@@ -173,7 +213,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_deserialize_config_with_custom_obd_commands() {
+    fn test_deserialize_config_full() {
         let yaml = r#"
 storage:
   clip_dir: "videos"
@@ -182,6 +222,13 @@ storage:
 obd:
   port: "/dev/rfcomm0"
   enabled: true
+  baudrate: 115200
+  startup_delay_seconds: 5
+  query_interval_ms: 250
+  timeout_ms: 300
+  init_commands:
+    - "AT Z"
+    - "AT SP 0"
   commands:
     - name: "Coolant Temp"
       address: "0105"
@@ -190,6 +237,7 @@ obd:
 
 recording:
   segment_seconds: 60
+  restart_check_interval_seconds: 3
 
 camera:
   width: 2304
@@ -199,7 +247,13 @@ camera:
   codec: "libav"
   hdr: "off"
   preview: false
-  extra_args: []
+  autofocus_mode: "manual"
+  lens_position: 0.2
+  denoise: "cdn_off"
+  exposure: "short"
+  awb: "auto"
+  roi: "0.0,0.0,1.0,0.77777"
+  extra_args: ["--nopreview"]
 
 ring_buffer:
   check_interval_seconds: 60
@@ -209,12 +263,28 @@ ring_buffer:
         let obd = config.obd.expect("OBD config missing");
         assert_eq!(obd.port.as_deref(), Some("/dev/rfcomm0"));
         assert_eq!(obd.enabled, Some(true));
+        assert_eq!(obd.baudrate, Some(115200));
+        assert_eq!(obd.startup_delay_seconds, Some(5));
+        assert_eq!(obd.query_interval_ms, Some(250));
+        assert_eq!(obd.timeout_ms, Some(300));
+        assert_eq!(
+            obd.init_commands.as_ref().unwrap(),
+            &vec!["AT Z".to_string(), "AT SP 0".to_string()]
+        );
         let commands = obd.commands.expect("Commands missing");
         assert_eq!(commands.len(), 2);
         assert_eq!(commands[0].name, "Coolant Temp");
         assert_eq!(commands[0].address, "0105");
         assert_eq!(commands[1].name, "Custom Sensor");
         assert_eq!(commands[1].address, "2214B3");
+
+        assert_eq!(config.recording.restart_check_interval_seconds, Some(3));
+        assert_eq!(config.camera.autofocus_mode.as_deref(), Some("manual"));
+        assert_eq!(config.camera.lens_position, Some(0.2));
+        assert_eq!(config.camera.denoise.as_deref(), Some("cdn_off"));
+        assert_eq!(config.camera.exposure.as_deref(), Some("short"));
+        assert_eq!(config.camera.awb.as_deref(), Some("auto"));
+        assert_eq!(config.camera.roi.as_deref(), Some("0.0,0.0,1.0,0.77777"));
     }
 
     #[test]
