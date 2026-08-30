@@ -13,50 +13,45 @@ This document provides essential instructions, architectural context, and develo
 > **No task is complete until `make test` passes cleanly.**
 
 `make test` executes two verification steps:
-1. **Linter & Style Check (`make code-check`)**: Runs `flake8 . --max-line-length=120 --exclude venv,.venv`.
-2. **Test Suite**: Discovers and runs all unit and simulation tests (`uv run python -m unittest discover -s tests`).
+1. **Linter & Style Check (`make code-check`)**: Runs `cargo clippy -- -D warnings` and `cargo fmt -- --check`.
+2. **Test Suite**: Runs all unit and simulation tests (`cargo test`).
 
 ---
 
 ## Project Overview
 
-`rpi5-dashcam` is a modular dashcam and vehicle telemetry recording system designed for Raspberry Pi 5 with Camera Module v3 (wide-angle lens) and Bluetooth OBD-II (ELM327) readers.
+`rpi5-dashcam` is a modular dashcam and vehicle telemetry recording system designed for Raspberry Pi 5 with Camera Module v3 (wide-angle lens) and Bluetooth OBD-II (ELM327) readers, implemented in **Rust**.
 
 ### Key Components
 
-- **`main.py`**: Application entrypoint. Initializes recorder, ring buffer, and OBD logging threads; monitors subprocess health and handles graceful shutdown.
-- **`camera/`**: Camera recording pipeline.
-  - `recorder.py`: `CameraRecorder` spawns and manages `rpicam-vid` piped into `ffmpeg` for segmented MP4 video recording.
-- **`storage/`**: Video and telemetry data storage management.
-  - `ringbuffer.py`: `RingBufferManager` monitors disk usage against configured storage limits (`max_storage_gigabytes`) and purges oldest un-protected video sessions (FIFO).
-- **`obd_pi/`**: Vehicle telemetry logging.
-  - `read_obd.py`: `CarLogger` queries OBD-II PIDs (including custom Mazda SkyActiv PIDs for oil temperature and pressure) and writes timestamped CSV logs.
-- **`config/`**:
-  - `config.yaml`: Central configuration for camera parameters, video segmentation, storage limits, and OBD port/settings.
-- **`tests/`**: Unit and simulation tests.
+- **`src/main.rs`**: Application entrypoint. Initializes recorder, ring buffer, and OBD logging threads; monitors subprocess health and handles graceful shutdown.
+- **`src/camera.rs`**: Camera recording pipeline (`CameraRecorder`) spawning and managing `rpicam-vid` piped into `ffmpeg` for segmented MP4 video recording.
+- **`src/storage.rs`**: Video and telemetry data storage management (`RingBufferManager`) monitoring disk usage against configured storage limits (`max_storage_gigabytes`) and purging oldest un-protected video sessions (FIFO).
+- **`src/obd_pi.rs`**: Vehicle telemetry logging (`CarLogger`) querying OBD-II PIDs (including custom Mazda SkyActiv PIDs for oil temperature and pressure) and writing timestamped CSV logs.
+- **`config/config.yaml`**: Central configuration for camera parameters, video segmentation, storage limits, and OBD port/settings.
 - *(Note: Post-processing, calibration, and diagnostic tools have been moved to the [`rpi5-tooling`](https://github.com/markusgitfor/rpi5-tooling) repository).*
 
 ---
 
 ## Development Environment & Tooling
 
-The project uses **Python 3.12+** and **[uv](https://github.com/astral-sh/uv)** for fast dependency management.
+The project uses **Rust** (managed via `cargo` / `rustup`).
 
 ### Common Makefile Commands
 
 | Command | Description |
 |---|---|
-| `make test` | **Run full validation** (flake8 linting + test suite) |
-| `make code-check` | Run flake8 linter with 120-character line length |
-| `make setup` | Install/sync Python dependencies using `uv sync` |
-| `make run` | Start the dashcam application (`uv run python main.py`) |
-| `make systemdeps` | Install required Linux system packages and `uv` |
+| `make test` | **Run full validation** (clippy + formatting + test suite) |
+| `make code-check` | Run `cargo clippy` with `-D warnings` and `cargo fmt -- --check` |
+| `make setup` | Build the Rust project release binary (`cargo build --release`) |
+| `make run` | Start the dashcam application (`cargo run --release`) |
+| `make systemdeps` | Install required Linux system packages and Rust toolchain |
 | `make update` | Pull latest updates from `origin main` |
 
 ### Dependency Management
 
-- Package dependencies are declared in `pyproject.toml` and locked in `uv.lock`.
-- When adding or updating dependencies, update `pyproject.toml` and run `uv sync` or `uv lock`.
+- Dependencies are declared in `Cargo.toml` and locked in `Cargo.lock`.
+- Use `cargo add` or edit `Cargo.toml` and run `cargo check` / `cargo build`.
 
 ---
 
