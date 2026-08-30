@@ -27,16 +27,14 @@ This document provides essential instructions, architectural context, and develo
 - **`main.py`**: Application entrypoint. Initializes recorder, ring buffer, and OBD logging threads; monitors subprocess health and handles graceful shutdown.
 - **`camera/`**: Camera recording pipeline.
   - `recorder.py`: `CameraRecorder` spawns and manages `rpicam-vid` piped into `ffmpeg` for segmented MP4 video recording.
-  - `undistort.py` & `calibration.py`: Lens calibration and video undistortion tools.
 - **`storage/`**: Video and telemetry data storage management.
   - `ringbuffer.py`: `RingBufferManager` monitors disk usage against configured storage limits (`max_storage_gigabytes`) and purges oldest un-protected video sessions (FIFO).
 - **`obd_pi/`**: Vehicle telemetry logging.
   - `read_obd.py`: `CarLogger` queries OBD-II PIDs (including custom Mazda SkyActiv PIDs for oil temperature and pressure) and writes timestamped CSV logs.
 - **`config/`**:
   - `config.yaml`: Central configuration for camera parameters, video segmentation, storage limits, and OBD port/settings.
-- **`utils/`**: Video processing utilities (`processor.py`, `operations/`, `video_merger.py`).
 - **`tests/`**: Unit and simulation tests.
-- **`etc/`**: Diagnostic and utility scripts (focus checking, sharpness testing, speed overlay).
+- *(Note: Post-processing, calibration, and diagnostic tools have been moved to the [`rpi5-tooling`](https://github.com/markusgitfor/rpi5-tooling) repository).*
 
 ---
 
