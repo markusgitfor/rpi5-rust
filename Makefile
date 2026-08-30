@@ -2,6 +2,8 @@
 # Dashcam Project Makefile
 # ----------------------------
 
+export PATH := $(HOME)/.cargo/bin:$(PATH)
+
 # Entry point of the project
 ENTRY = target/release/rpi5_dashcam
 

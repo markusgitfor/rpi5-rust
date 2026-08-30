@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Bluetooth & OBD dependencies
     bluez \
     libbluetooth-dev \
+    libudev-dev \
     rfkill \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -40,7 +41,10 @@ RUN for group in video dialout bluetooth plugdev input; do \
         groupadd -f -r "$group" && usermod -aG "$group" vscode; \
     done
 
-# Ensure vscode local bin is in PATH
-ENV PATH="/home/vscode/.local/bin:$PATH"
-
+# Switch to vscode user and install Rust toolchain
 USER vscode
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+
+# Ensure vscode cargo and local bin are in PATH
+ENV PATH="/home/vscode/.cargo/bin:/home/vscode/.local/bin:$PATH"
+
