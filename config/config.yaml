@@ -9,6 +9,23 @@ storage:
 obd:
   port: "/tmp/ttyCarly"
   enabled: true
+  commands:
+    - name: "RPM"
+      address: "010C"
+    - name: "Speed"
+      address: "010D"
+    - name: "Coolant"
+      address: "0105"
+    - name: "Intake Temp"
+      address: "010F"
+    - name: "Oil Temp"
+      address: "221310"
+    - name: "Load"
+      address: "0104"
+    - name: "Timing"
+      address: "010E"
+    - name: "Rail Press"
+      address: "0159"
 
 recording:
   segment_seconds: 60               # Length of each clip (seconds)

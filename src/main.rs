@@ -10,7 +10,7 @@ pub mod obd_pi;
 pub mod storage;
 
 use camera::CameraRecorder;
-use obd_pi::CarLogger;
+use obd_pi::{CarLogger, ObdCommandConfig};
 use storage::RingBufferManager;
 
 #[derive(Deserialize)]
@@ -23,6 +23,8 @@ struct StorageConfig {
 struct ObdConfig {
     port: Option<String>,
     enabled: Option<bool>,
+    #[serde(default, alias = "pids", alias = "data", alias = "queries")]
+    commands: Option<Vec<ObdCommandConfig>>,
 }
 
 #[derive(Deserialize)]
@@ -120,8 +122,9 @@ fn main() {
         .and_then(|o| o.port.clone())
         .unwrap_or_else(|| "/dev/rfcomm0".to_string());
     let obd_enabled = config.obd.as_ref().and_then(|o| o.enabled).unwrap_or(false);
+    let obd_commands = config.obd.as_ref().and_then(|o| o.commands.clone());
 
-    let mut car_logger = CarLogger::new(obd_port, clip_dir.clone(), obd_enabled);
+    let mut car_logger = CarLogger::new(obd_port, clip_dir.clone(), obd_enabled, obd_commands);
 
     thread::spawn(move || {
         thread::sleep(Duration::from_secs(11));
@@ -162,5 +165,94 @@ fn main() {
     // Let's just loop and block main, the process will die on Ctrl-C.
     loop {
         thread::sleep(Duration::from_secs(100));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deserialize_config_with_custom_obd_commands() {
+        let yaml = r#"
+storage:
+  clip_dir: "videos"
+  max_storage_gigabytes: 12
+
+obd:
+  port: "/dev/rfcomm0"
+  enabled: true
+  commands:
+    - name: "Coolant Temp"
+      address: "0105"
+    - name: "Custom Sensor"
+      address: "2214B3"
+
+recording:
+  segment_seconds: 60
+
+camera:
+  width: 2304
+  height: 1008
+  fps: 25
+  buffer_count: 30
+  codec: "libav"
+  hdr: "off"
+  preview: false
+  extra_args: []
+
+ring_buffer:
+  check_interval_seconds: 60
+"#;
+
+        let config: Config = serde_yaml::from_str(yaml).expect("Failed to parse YAML");
+        let obd = config.obd.expect("OBD config missing");
+        assert_eq!(obd.port.as_deref(), Some("/dev/rfcomm0"));
+        assert_eq!(obd.enabled, Some(true));
+        let commands = obd.commands.expect("Commands missing");
+        assert_eq!(commands.len(), 2);
+        assert_eq!(commands[0].name, "Coolant Temp");
+        assert_eq!(commands[0].address, "0105");
+        assert_eq!(commands[1].name, "Custom Sensor");
+        assert_eq!(commands[1].address, "2214B3");
+    }
+
+    #[test]
+    fn test_deserialize_config_with_pids_alias() {
+        let yaml = r#"
+storage:
+  clip_dir: "videos"
+  max_storage_gigabytes: 12
+
+obd:
+  port: "/tmp/ttyCarly"
+  enabled: true
+  pids:
+    - label: "Engine RPM"
+      pid: "010C"
+
+recording:
+  segment_seconds: 60
+
+camera:
+  width: 2304
+  height: 1008
+  fps: 25
+  buffer_count: 30
+  codec: "libav"
+  hdr: "off"
+  preview: false
+  extra_args: []
+
+ring_buffer:
+  check_interval_seconds: 60
+"#;
+
+        let config: Config = serde_yaml::from_str(yaml).expect("Failed to parse YAML");
+        let obd = config.obd.expect("OBD config missing");
+        let commands = obd.commands.expect("Commands missing");
+        assert_eq!(commands.len(), 1);
+        assert_eq!(commands[0].name, "Engine RPM");
+        assert_eq!(commands[0].address, "010C");
     }
 }
