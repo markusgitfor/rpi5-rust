@@ -31,7 +31,7 @@ code-check:
 	cargo fmt -- --check
 
 # ----------------------------
-# Install Python packages / Setup
+# Build / Setup
 # ----------------------------
 .PHONY: setup
 setup:

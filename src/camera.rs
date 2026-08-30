@@ -11,6 +11,12 @@ pub struct CameraRecorder {
     pub codec: String,
     pub hdr: String,
     pub preview: bool,
+    pub autofocus_mode: String,
+    pub lens_position: Option<f32>,
+    pub denoise: String,
+    pub exposure: String,
+    pub awb: String,
+    pub roi: Option<String>,
     pub extra_args: Vec<String>,
     pub libav_opts: Vec<String>,
 
@@ -30,6 +36,12 @@ impl CameraRecorder {
         codec: String,
         hdr: String,
         preview: bool,
+        autofocus_mode: Option<String>,
+        lens_position: Option<f32>,
+        denoise: Option<String>,
+        exposure: Option<String>,
+        awb: Option<String>,
+        roi: Option<String>,
         extra_args: Vec<String>,
         libav_opts: Option<Vec<String>>,
     ) -> Self {
@@ -44,6 +56,12 @@ impl CameraRecorder {
             codec,
             hdr,
             preview,
+            autofocus_mode: autofocus_mode.unwrap_or_else(|| "manual".into()),
+            lens_position,
+            denoise: denoise.unwrap_or_else(|| "cdn_off".into()),
+            exposure: exposure.unwrap_or_else(|| "short".into()),
+            awb: awb.unwrap_or_else(|| "auto".into()),
+            roi,
             extra_args,
             libav_opts: libav_opts.unwrap_or_else(|| {
                 vec![
@@ -90,25 +108,34 @@ impl CameraRecorder {
             "--buffer-count".into(),
             self.buffer_count.to_string(),
             "--autofocus-mode".into(),
-            "manual".into(),
-            "--lens-position".into(),
-            "0.2".into(),
+            self.autofocus_mode.clone(),
             "--denoise".into(),
-            "cdn_off".into(),
+            self.denoise.clone(),
             "--exposure".into(),
-            "short".into(),
+            self.exposure.clone(),
             "--awb".into(),
-            "auto".into(),
+            self.awb.clone(),
             "--hdr".into(),
             self.hdr.clone(),
-            "--roi".into(),
-            "0.0,0.0,1.0,0.77777".into(),
             "--codec".into(),
             self.codec.clone(),
             "--inline".into(),
             "-o".into(),
             "-".into(),
         ];
+
+        if let Some(pos) = self.lens_position {
+            rpicam_args.push("--lens-position".into());
+            rpicam_args.push(pos.to_string());
+        }
+
+        if let Some(ref roi) = self.roi {
+            let trimmed = roi.trim();
+            if !trimmed.is_empty() {
+                rpicam_args.push("--roi".into());
+                rpicam_args.push(trimmed.to_string());
+            }
+        }
 
         if !self.preview {
             rpicam_args.push("--nopreview".into());

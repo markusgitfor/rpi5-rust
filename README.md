@@ -1,6 +1,6 @@
 # rpi5-dashcam
 
-A modular, lightweight dashcam and vehicle telemetry recording system designed for the **Raspberry Pi 5** using the **Raspberry Pi Camera Module v3** (wide-angle lens) and **Bluetooth OBD-II (ELM327)** adapters.
+A modular, lightweight dashcam and vehicle telemetry recording system designed for the **Raspberry Pi 5** using the **Raspberry Pi Camera Module v3** (wide-angle lens) and **Bluetooth OBD-II (ELM327)** adapters, implemented in **Rust**.
 
 ---
 
@@ -12,7 +12,7 @@ A modular, lightweight dashcam and vehicle telemetry recording system designed f
 - **Crash Recovery & Reliability**: Monitors capture and encoding subprocesses, automatically restarting the recording pipeline if a crash is detected.
 - **Auto-Start on Boot**: Complete `systemd` service setup for hands-free, headless operation when the vehicle starts.
 - **Dedicated Tooling Suite**: Companion post-processing, calibration, and diagnostic tools are available in [`rpi5-tooling`](https://github.com/markusgitfor/rpi5-tooling).
-- **Dev Container Support**: Pre-configured VS Code Dev Container replicating the Raspberry Pi OS (Debian 12 Bookworm) environment for development and simulation testing.
+- **Dev Container Support**: Pre-configured VS Code Dev Container replicating the Raspberry Pi OS (Debian 12 Bookworm) environment for development and simulation testing with the Rust toolchain pre-installed.
 
 ---
 
@@ -51,31 +51,31 @@ A modular, lightweight dashcam and vehicle telemetry recording system designed f
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/markusgitfor/rpi5.git
-   cd rpi5
+   git clone https://github.com/markusgitfor/rpi5-rust.git
+   cd rpi5-rust
    ```
 
-2. **Install system dependencies & `uv` package manager:**
+2. **Install system dependencies & Rust toolchain:**
    ```bash
    make systemdeps
    ```
-   This command installs essential system packages (`ffmpeg`, `libcamera-dev`, `v4l-utils`, etc.) and sets up [`uv`](https://github.com/astral-sh/uv).
+   This command installs essential system packages (`ffmpeg`, `libcamera-dev`, `v4l-utils`, `libudev-dev`, `pkg-config`, etc.) and sets up the Rust toolchain via [`rustup`](https://rustup.rs).
 
-3. **Install Python dependencies:**
+3. **Build the release binary:**
    ```bash
    make setup
    ```
-   This command syncs all required Python packages into a local virtual environment (`.venv/`) using `uv`.
+   This command compiles the project in release mode (`cargo build --release`).
 
 ---
 
 ### Development with Dev Containers
 
-This repository includes a ready-to-use `.devcontainer` configuration replicating the Raspberry Pi 5 (Debian 12 Bookworm) environment with `libcamera`, `ffmpeg`, `bluez`, and `uv` pre-installed.
+This repository includes a ready-to-use `.devcontainer` configuration replicating the Raspberry Pi 5 (Debian 12 Bookworm) environment with the Rust toolchain, `libcamera`, `ffmpeg`, `bluez`, and `libudev-dev` pre-installed.
 
 1. Open this repository in **VS Code**.
 2. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the Command Palette `F1` / `Ctrl+Shift+P`).
-3. VS Code will automatically build the container and run `uv sync` to configure the environment.
+3. VS Code will automatically build the container and run `make setup` to compile the project.
 
 ---
 
@@ -89,10 +89,16 @@ To start the dashcam recorder manually:
 make run
 ```
 
-Or run directly via `uv`:
+Or run directly via `cargo`:
 
 ```bash
-uv run python main.py
+cargo run --release
+```
+
+Or execute the compiled binary directly:
+
+```bash
+./target/release/rpi5_dashcam
 ```
 
 ### Stopping the Dashcam
@@ -117,9 +123,37 @@ storage:
 obd:
   port: "/tmp/ttyCarly"              # Serial/RFCOMM port or PTY for OBD-II adapter
   enabled: true                      # Enable or disable telemetry recording
+  baudrate: 38400                    # Serial communication baud rate
+  startup_delay_seconds: 11          # Delay before initial OBD connection attempt
+  query_interval_ms: 500             # Polling interval between telemetry queries (ms)
+  timeout_ms: 500                    # Serial read/write timeout (ms)
+  init_commands:                     # AT commands sent during adapter initialization
+    - "AT Z"
+    - "AT E0"
+    - "AT L0"
+    - "AT S0"
+    - "AT SP 0"
+  commands:                          # Configurable OBD-II PIDs and custom addresses to query
+    - name: "RPM"                    # CSV header label
+      address: "010C"                # OBD PID / command hex address
+    - name: "Speed"
+      address: "010D"
+    - name: "Coolant"
+      address: "0105"
+    - name: "Intake Temp"
+      address: "010F"
+    - name: "Oil Temp"
+      address: "221310"
+    - name: "Load"
+      address: "0104"
+    - name: "Timing"
+      address: "010E"
+    - name: "Rail Press"
+      address: "0159"
 
 recording:
   segment_seconds: 60                # Length of each segmented video clip (in seconds)
+  restart_check_interval_seconds: 2  # Interval to verify subprocess health (seconds)
 
 camera:
   width: 2304                        # Video capture resolution width
@@ -129,6 +163,12 @@ camera:
   codec: "libav"                     # Video codec: "libav" (software) or "h264" (hardware)
   hdr: "off"                         # HDR mode: "on" or "off"
   preview: false                     # Enable or disable live preview window
+  autofocus_mode: "manual"           # "manual", "auto", "continuous"
+  lens_position: 0.2                 # Fixed lens focus position (dioptres)
+  denoise: "cdn_off"                 # Denoise mode: "cdn_off", "cdn_fast", "cdn_hq"
+  exposure: "short"                  # Exposure profile: "short", "normal", "sport"
+  awb: "auto"                        # Auto white balance: "auto", "incandescent", etc.
+  roi: "0.0,0.0,1.0,0.77777"         # Sensor Region of Interest (x,y,w,h)
   extra_args: []                     # Additional flags passed directly to rpicam-vid
   # libav_opts:                      # Advanced encoding options for libav (optional)
   #   - "crf=23"
@@ -173,13 +213,13 @@ Add the following configuration (adjust paths and user according to your setup):
 
 ```ini
 [Unit]
-Description=Dashcam Python Script
+Description=Dashcam Service
 After=network.target
 
 [Service]
-# Adjust path to python binary inside .venv and working directory
-ExecStart=/home/markus/Documents/rpi5/.venv/bin/python /home/markus/Documents/rpi5/main.py
-WorkingDirectory=/home/markus/Documents/rpi5
+# Path to compiled Rust release binary and working directory
+ExecStart=/home/markus/Documents/rpi5-rust/target/release/rpi5_dashcam
+WorkingDirectory=/home/markus/Documents/rpi5-rust
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
@@ -266,7 +306,7 @@ ssh markus@192.168.0.33
 To copy or sync recorded video sessions and telemetry logs from the Raspberry Pi directly to your PC, run the following command in your PC's terminal:
 
 ```bash
-rsync -avP markus@192.168.0.33:/home/markus/Documents/rpi5/videos/ .
+rsync -avP markus@192.168.0.33:/home/markus/Documents/rpi5-rust/videos/ .
 ```
 
 - `-a` (archive): Preserves timestamps, permissions, and directory structure.
@@ -297,20 +337,18 @@ Post-processing, camera calibration, focus diagnostics, and telemetry overlay ut
 ## 📁 Project Structure
 
 ```
-rpi5/
-├── camera/                  # Camera recording pipeline
-│   └── recorder.py          # CameraRecorder (rpicam-vid + ffmpeg pipeline)
+rpi5-rust/
 ├── config/
 │   └── config.yaml          # Central dashcam and hardware configuration
-├── obd_pi/                  # OBD-II vehicle telemetry
-│   └── read_obd.py          # CarLogger with custom Mazda PIDs
-├── storage/                 # Storage management
-│   └── ringbuffer.py        # RingBufferManager (FIFO disk space enforcement)
-├── tests/                   # Simulation and unit test suite
-│   └── test_simulation.py   # Simulation tests for recorder and storage
-├── main.py                  # Main dashcam orchestration entrypoint
-├── Makefile                 # Automation shortcuts (run, test, setup, etc.)
-└── pyproject.toml           # Project metadata and lightweight runtime dependencies
+├── src/
+│   ├── camera.rs            # CameraRecorder (rpicam-vid + ffmpeg pipeline)
+│   ├── main.rs              # Application entrypoint and subsystem orchestration
+│   ├── obd_pi.rs            # CarLogger OBD-II telemetry with custom Mazda PIDs
+│   └── storage.rs           # RingBufferManager (FIFO disk space enforcement)
+├── .devcontainer/           # VS Code Dev Container configuration
+├── Cargo.lock               # Dependency lockfile
+├── Cargo.toml               # Cargo package manifest & dependencies
+└── Makefile                 # Automation targets (run, test, code-check, setup, etc.)
 ```
 
 ---
@@ -322,24 +360,24 @@ rpi5/
 Always verify changes using the Makefile test suite:
 
 ```bash
-# Run full verification (flake8 linting + test suite)
+# Run full verification (clippy + formatting + test suite)
 make test
 
-# Run flake8 linting check only
+# Run code formatting and linter checks only
 make code-check
 ```
 
 ### Dependency Management
 
-Dependencies are managed using `uv` and tracked in `pyproject.toml` and `uv.lock`.
+Dependencies are managed using `Cargo` and tracked in `Cargo.toml` and `Cargo.lock`.
 
 ```bash
-# Add a new runtime dependency
-uv add <package-name>
+# Add a new crate dependency
+cargo add <crate-name>
 
-# Add a development dependency
-uv add --dev <package-name>
+# Build the project
+cargo build
 
-# Sync dependencies
-make setup
+# Run unit tests
+cargo test
 ```

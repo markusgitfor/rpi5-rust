@@ -3,26 +3,60 @@
 # =============================
 
 storage:
-  clip_dir: "videos"
-  max_storage_gigabytes: 12  # 12 GB
+  clip_dir: "videos"                 # Root directory for session video clips
+  max_storage_gigabytes: 12          # 12 GB storage limit for FIFO ring buffer
 
 obd:
-  port: "/tmp/ttyCarly"
-  enabled: true
+  port: "/tmp/ttyCarly"              # Serial/RFCOMM port or PTY for OBD-II adapter
+  enabled: true                      # Enable or disable telemetry recording
+  baudrate: 38400                    # Serial communication baud rate
+  startup_delay_seconds: 11          # Delay before initial OBD connection attempt
+  query_interval_ms: 500             # Polling interval between telemetry queries (ms)
+  timeout_ms: 500                    # Serial read/write timeout (ms)
+  init_commands:                     # AT commands sent during adapter initialization
+    - "AT Z"
+    - "AT E0"
+    - "AT L0"
+    - "AT S0"
+    - "AT SP 0"
+  commands:
+    - name: "RPM"
+      address: "010C"
+    - name: "Speed"
+      address: "010D"
+    - name: "Coolant"
+      address: "0105"
+    - name: "Intake Temp"
+      address: "010F"
+    - name: "Oil Temp"
+      address: "221310"
+    - name: "Load"
+      address: "0104"
+    - name: "Timing"
+      address: "010E"
+    - name: "Rail Press"
+      address: "0159"
 
 recording:
-  segment_seconds: 60               # Length of each clip (seconds)
+  segment_seconds: 60                # Length of each clip (seconds)
+  restart_check_interval_seconds: 2  # Interval to verify subprocess health (seconds)
 
 camera:
   width: 2304
   height: 1008
   fps: 25
   buffer_count: 30
-  codec: "libav"                    # "libav" for software encoding, "h264" for hardware
-  hdr: "off"                         # "on" or "off"
-  preview: false                      # Show preview window
-  extra_args: []                      # Any additional rpicam-vid arguments
-  # libav_opts:                       # Overrides for libav codec (uncomment to use)
+  codec: "libav"                     # "libav" for software encoding, "h264" for hardware
+  hdr: "off"                          # "on" or "off"
+  preview: false                       # Show preview window
+  autofocus_mode: "manual"            # "manual", "auto", "continuous"
+  lens_position: 0.2                  # Fixed lens focus position (dioptres)
+  denoise: "cdn_off"                  # Denoise mode: "cdn_off", "cdn_fast", "cdn_hq"
+  exposure: "short"                   # Exposure profile: "short", "normal", "sport"
+  awb: "auto"                         # Auto white balance: "auto", "incandescent", etc.
+  roi: "0.0,0.0,1.0,0.77777"          # Region of interest (x,y,w,h)
+  extra_args: []                       # Any additional rpicam-vid arguments
+  # libav_opts:                        # Overrides for libav codec (uncomment to use)
   #   - "crf=23"
   #   - "preset=superfast"
   #   - "profile=high"
@@ -31,5 +65,6 @@ camera:
   #   - "g=25"
 
 ring_buffer:
-  check_interval_seconds: 60         # How often to enforce storage limits
+  check_interval_seconds: 60          # How often to enforce storage limits (seconds)
+
 
