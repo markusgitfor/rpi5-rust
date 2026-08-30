@@ -11,7 +11,7 @@ A modular, lightweight dashcam and vehicle telemetry recording system designed f
 - **OBD-II Vehicle Telemetry**: Simultaneously logs vehicle parameters (Speed, RPM, Throttle, Coolant Temperature, plus custom Mazda SkyActiv Oil Temperature & Oil Pressure) to a synchronized `telemetry.csv` file.
 - **Crash Recovery & Reliability**: Monitors capture and encoding subprocesses, automatically restarting the recording pipeline if a crash is detected.
 - **Auto-Start on Boot**: Complete `systemd` service setup for hands-free, headless operation when the vehicle starts.
-- **Lens Calibration & Utilities**: Built-in tools for fisheye lens calibration, video undistortion, focus checking, sharpness evaluation, and telemetry video overlays.
+- **Dedicated Tooling Suite**: Companion post-processing, calibration, and diagnostic tools are available in [`rpi5-tooling`](https://github.com/markusgitfor/rpi5-tooling).
 - **Dev Container Support**: Pre-configured VS Code Dev Container replicating the Raspberry Pi OS (Debian 12 Bookworm) environment for development and simulation testing.
 
 ---
@@ -29,7 +29,7 @@ A modular, lightweight dashcam and vehicle telemetry recording system designed f
 - [Remote Access & File Transfer](#-remote-access--file-transfer)
   - [SSH Remote Access](#ssh-remote-access)
   - [Transferring Videos to PC (rsync)](#transferring-videos-to-pc-rsync)
-- [Utilities & Diagnostic Tools](#-utilities--diagnostic-tools)
+- [Companion Tooling (`rpi5-tooling`)](#-companion-tooling-rpi5-tooling)
 - [Project Structure](#-project-structure)
 - [Development & Testing](#-development--testing)
 
@@ -276,19 +276,21 @@ rsync -avP markus@192.168.0.33:/home/markus/Documents/rpi5/videos/ .
 
 ---
 
-## 🧰 Utilities & Diagnostic Tools
+## 🧰 Companion Tooling (`rpi5-tooling`)
 
-The repository includes supplementary utilities located in `camera/` and `etc/`:
+Post-processing, camera calibration, focus diagnostics, and telemetry overlay utilities have been decoupled into the dedicated repository **[`rpi5-tooling`](https://github.com/markusgitfor/rpi5-tooling)**:
 
 - **Camera Undistortion & Calibration**:
-  - `camera/calibration.py`: Computes camera calibration matrix and distortion coefficients using chessboard pattern images.
-  - `camera/undistort.py`: Removes fisheye barrel distortion from recorded video files.
+  - `calibration/camera_calibration.py`: Computes camera calibration matrix and distortion coefficients using chessboard pattern images.
+  - `calibration/convert_colmap.py`: Converts COLMAP intrinsics to OpenCV `.npz` calibration format.
+  - `video/undistort.py`: Removes fisheye barrel distortion from recorded video files.
 - **Focus & Sharpness Diagnostics**:
-  - `etc/test_focus.py`: Interactive focus testing utility using `rpicam-vid`.
-  - `etc/check_sharpness.py`: Calculates image sharpness metrics (Laplacian variance) on camera frames.
+  - `diagnostics/test_focus.py`: Interactive focus testing utility using `rpicam-still`.
+  - `diagnostics/check_sharpness.py`: Calculates image sharpness metrics (Laplacian variance) on camera frames.
 - **Video & Telemetry Processing**:
-  - `etc/overlay_speed_video.py`: Overlays real-time speed and telemetry onto recorded dashcam videos.
-  - `utils/video_merger.py`: Merges segmented MP4 video clips into combined session files.
+  - `telemetry/overlay_video.py`: Overlays real-time speed and telemetry onto recorded dashcam videos.
+  - `video/merger.py`: Merges segmented MP4 video clips into combined session files.
+  - `video/processor.py`: Extensible video transformation pipeline.
 
 ---
 
@@ -296,30 +298,19 @@ The repository includes supplementary utilities located in `camera/` and `etc/`:
 
 ```
 rpi5/
-├── camera/                  # Camera recording and lens undistortion
-│   ├── calibration.py       # Camera matrix calibration utility
-│   ├── recorder.py          # CameraRecorder (rpicam-vid + ffmpeg pipeline)
-│   └── undistort.py         # Fisheye lens undistortion processor
+├── camera/                  # Camera recording pipeline
+│   └── recorder.py          # CameraRecorder (rpicam-vid + ffmpeg pipeline)
 ├── config/
 │   └── config.yaml          # Central dashcam and hardware configuration
-├── etc/                     # Diagnostic and post-processing scripts
-│   ├── check_sharpness.py   # Sharpness calculation script
-│   ├── convert_colmap_calibration.py
-│   ├── overlay_speed_video.py # Telemetry video overlay utility
-│   └── test_focus.py        # Focus tuning script
 ├── obd_pi/                  # OBD-II vehicle telemetry
 │   └── read_obd.py          # CarLogger with custom Mazda PIDs
 ├── storage/                 # Storage management
 │   └── ringbuffer.py        # RingBufferManager (FIFO disk space enforcement)
 ├── tests/                   # Simulation and unit test suite
 │   └── test_simulation.py   # Simulation tests for recorder and storage
-├── utils/                   # Video processing helpers
-│   ├── operations/          # Video operation modules
-│   ├── processor.py         # Batch video processing pipeline
-│   └── video_merger.py      # Video segment concatenator
 ├── main.py                  # Main dashcam orchestration entrypoint
 ├── Makefile                 # Automation shortcuts (run, test, setup, etc.)
-└── pyproject.toml           # Project metadata and dependencies
+└── pyproject.toml           # Project metadata and lightweight runtime dependencies
 ```
 
 ---
