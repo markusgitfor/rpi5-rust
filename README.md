@@ -26,7 +26,9 @@ A modular, lightweight dashcam and vehicle telemetry recording system designed f
 - [Configuration](#-configuration)
 - [Auto-Start on Boot (systemd Service)](#-auto-start-on-boot-systemd-service)
 - [OBD-II Telemetry Setup](#-obd-ii-telemetry-setup)
-- [Remote Access via Wi-Fi (SSH)](#-remote-access-via-wi-fi-ssh)
+- [Remote Access & File Transfer](#-remote-access--file-transfer)
+  - [SSH Remote Access](#ssh-remote-access)
+  - [Transferring Videos to PC (rsync)](#transferring-videos-to-pc-rsync)
 - [Utilities & Diagnostic Tools](#-utilities--diagnostic-tools)
 - [Project Structure](#-project-structure)
 - [Development & Testing](#-development--testing)
@@ -247,7 +249,9 @@ The dashcam system includes telemetry logging through standard OBD-II protocols 
 
 ---
 
-## 📶 Remote Access via Wi-Fi (SSH)
+## 📶 Remote Access & File Transfer
+
+### SSH Remote Access
 
 You can access and manage your Raspberry Pi over Wi-Fi via SSH:
 
@@ -256,6 +260,19 @@ ssh markus@192.168.0.33
 ```
 
 > **Note:** Replace `markus` with your Raspberry Pi username and `192.168.0.33` with your Raspberry Pi's actual IP address. Enter your password when prompted.
+
+### Transferring Videos to PC (rsync)
+
+To copy or sync recorded video sessions and telemetry logs from the Raspberry Pi directly to your PC, run the following command in your PC's terminal:
+
+```bash
+rsync -avP markus@192.168.0.33:/home/markus/Documents/rpi5/videos/ .
+```
+
+- `-a` (archive): Preserves timestamps, permissions, and directory structure.
+- `-v` (verbose): Displays detailed transfer progress.
+- `-P` (progress & partial): Shows a real-time progress bar and allows resuming interrupted transfers.
+- `.` (destination): Copies all session folders directly into your current working directory.
 
 ---
 
