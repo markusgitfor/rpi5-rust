@@ -29,6 +29,7 @@ CAM_CODEC = config["camera"]["codec"]
 CAM_HDR = config["camera"]["hdr"]
 CAM_PREVIEW = config["camera"]["preview"]
 CAM_EXTRA_ARGS = config["camera"]["extra_args"]
+CAM_LIBAV_OPTS = config["camera"].get("libav_opts")
 
 RING_CHECK_INTERVAL = config["ring_buffer"]["check_interval_seconds"]
 
@@ -74,7 +75,8 @@ def main():
         codec=CAM_CODEC,
         hdr=CAM_HDR,
         preview=CAM_PREVIEW,
-        extra_args=CAM_EXTRA_ARGS
+        extra_args=CAM_EXTRA_ARGS,
+        libav_opts=CAM_LIBAV_OPTS
     )
 
     # 2. Initialize OBD Logger

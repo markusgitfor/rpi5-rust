@@ -10,6 +10,14 @@ make systemdeps
 make install
 ```
 
+### Development with Dev Containers
+
+This repository includes a ready-to-use `.devcontainer` configuration replicating the Raspberry Pi 5 (Debian 12 Bookworm) environment with `libcamera`, `ffmpeg`, `bluez`, and `uv` pre-installed.
+
+1. Open this repository in VS Code.
+2. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the Command Palette `F1` / `Ctrl+Shift+P`).
+3. VS Code will automatically build the container and run `uv sync` to set up the virtual environment with all required dependencies.
+
 Recording can be started with only using command: 
 
 ```
