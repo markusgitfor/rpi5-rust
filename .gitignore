@@ -24,3 +24,8 @@ merge_list.txt
 # Generated post-processing output
 *_overlay.mp4
 *_undistorted.mp4
+
+
+# Added by cargo
+
+/target

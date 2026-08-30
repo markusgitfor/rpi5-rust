@@ -3,10 +3,7 @@
 # ----------------------------
 
 # Entry point of the project
-ENTRY = main.py
-
-# uv is detected from PATH if available, or fallback to user local bin.
-UV ?= $(shell which uv 2>/dev/null || echo $(HOME)/.local/bin/uv)
+ENTRY = target/release/rpi5_dashcam
 
 # ----------------------------
 # Install system dependencies
@@ -15,10 +12,10 @@ UV ?= $(shell which uv 2>/dev/null || echo $(HOME)/.local/bin/uv)
 systemdeps:
 	@echo "Installing system dependencies..."
 	sudo apt update
-	sudo apt install -y curl ffmpeg libcamera-dev v4l-utils libgl1 libglib2.0-0
+	sudo apt install -y curl ffmpeg libcamera-dev v4l-utils libgl1 libglib2.0-0 libudev-dev pkg-config
 	@sudo apt install -y rpicam-apps libcamera-apps python3-libcamera 2>/dev/null || sudo apt install -y libcamera-tools 2>/dev/null || true
-	@if [ ! -x "$(UV)" ]; then \
-	    curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	@if ! command -v cargo &> /dev/null; then \
+	    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
 	fi
 	
 # ----------------------------
@@ -26,16 +23,18 @@ systemdeps:
 # ----------------------------
 .PHONY: code-check
 code-check:
-	@echo "Running flake8 code check..."
-	$(UV) run flake8 . --max-line-length=120 --exclude venv,.venv
+	@echo "Running cargo clippy..."
+	cargo clippy -- -D warnings
+	@echo "Running cargo fmt..."
+	cargo fmt -- --check
 
 # ----------------------------
-# Install Python packages
+# Install Python packages / Setup
 # ----------------------------
 .PHONY: setup
 setup:
-	@echo "Installing Python dependencies..."
-	$(UV) sync
+	@echo "Building Rust project..."
+	cargo build --release
 
 # ----------------------------
 # Run the dashcam project
@@ -43,7 +42,7 @@ setup:
 .PHONY: run
 run:
 	@echo "Running dashcam project..."
-	$(UV) run python $(ENTRY)
+	cargo run --release
 
 # ----------------------------
 # Run tests
@@ -51,7 +50,7 @@ run:
 .PHONY: test
 test: code-check
 	@echo "Running simulation tests..."
-	$(UV) run python -m unittest discover -s tests
+	cargo test
 
 # ----------------------------
 # Update branch
