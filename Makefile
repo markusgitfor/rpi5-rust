@@ -5,18 +5,18 @@
 # Entry point of the project
 ENTRY = main.py
 
-# uv is installed per-user by the official installer. Override with `make UV=uv ...`
-# when uv is already available on PATH.
-UV ?= $(HOME)/.local/bin/uv
+# uv is detected from PATH if available, or fallback to user local bin.
+UV ?= $(shell which uv 2>/dev/null || echo $(HOME)/.local/bin/uv)
 
 # ----------------------------
 # Install system dependencies
 # ----------------------------
 .PHONY: systemdeps
 systemdeps:
-	@echo "Installing system dependencies for Pi Camera..."
+	@echo "Installing system dependencies..."
 	sudo apt update
-	sudo apt install -y curl libcamera-apps libcamera-dev python3-libcamera
+	sudo apt install -y curl ffmpeg libcamera-dev v4l-utils libgl1 libglib2.0-0
+	@sudo apt install -y rpicam-apps libcamera-apps python3-libcamera 2>/dev/null || sudo apt install -y libcamera-tools 2>/dev/null || true
 	@if [ ! -x "$(UV)" ]; then \
 	    curl -LsSf https://astral.sh/uv/install.sh | sh; \
 	fi
@@ -32,8 +32,8 @@ code-check:
 # ----------------------------
 # Install Python packages
 # ----------------------------
-.PHONY: install
-install:
+.PHONY: setup
+setup:
 	@echo "Installing Python dependencies..."
 	$(UV) sync
 
@@ -44,6 +44,14 @@ install:
 run:
 	@echo "Running dashcam project..."
 	$(UV) run python $(ENTRY)
+
+# ----------------------------
+# Run tests
+# ----------------------------
+.PHONY: test
+test: code-check
+	@echo "Running simulation tests..."
+	$(UV) run python -m unittest discover -s tests
 
 # ----------------------------
 # Update branch
